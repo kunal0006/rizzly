@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #00ff00; /* Neon Green */
+  --primary-foreground: #000000;
+  --secondary: #ff00ff; /* Hot Pink */
+  --secondary-foreground: #ffffff;
+  --muted: #f3f4f6;
+  --muted-foreground: #4b5563;
+  --accent: #ffff00; /* Yellow */
+  --accent-foreground: #000000;
+  --destructive: #ff0000;
+  --destructive-foreground: #ffffff;
+  --border: #000000;
+  --input: #000000;
+  --ring: #000000;
+  --radius: 0rem; /* Hard edges for brutalism */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  
+  --font-pixel: "Press Start 2P", monospace;
+  --font-mono: "Space Mono", monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    background-color: #ffffff;
+    color: #000000;
+    /* Grid background pattern */
+    background-image: 
+      linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+      linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+    background-size: 20px 20px;
+    font-family: var(--font-mono);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-pixel);
+    text-transform: uppercase;
+  }
+}
+
+@layer utilities {
+  .brutal-border {
+    @apply border-4 border-black;
+  }
+  .brutal-shadow {
+    box-shadow: 6px 6px 0px 0px #000000;
+    transition: all 0.2s ease-in-out;
+  }
+  .brutal-shadow:hover {
+    box-shadow: 8px 8px 0px 0px #000000;
+    transform: translate(-2px, -2px);
+  }
+  .brutal-shadow:active {
+    box-shadow: 0px 0px 0px 0px #000000;
+    transform: translate(6px, 6px);
+  }
+  
+  .brutal-shadow-sm {
+    box-shadow: 4px 4px 0px 0px #000000;
+    transition: all 0.1s ease-in-out;
+  }
+  .brutal-shadow-sm:active {
+    box-shadow: 0px 0px 0px 0px #000000;
+    transform: translate(4px, 4px);
+  }
+}
