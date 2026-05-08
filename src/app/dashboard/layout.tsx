@@ -1,11 +1,24 @@
-import { Home, History, PlusSquare, LogOut } from "lucide-react";
+"use client";
+
+import { Home, History, PlusSquare, LogOut, ShoppingCart } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row pb-20 md:pb-0 font-mono overflow-x-hidden">
       
@@ -21,11 +34,17 @@ export default function DashboardLayout({
           <Link href="/dashboard/history" className="p-4 brutal-border bg-white font-bold brutal-shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-3 uppercase text-lg">
             <History className="w-6 h-6" /> History
           </Link>
+          <Link href="/pricing" className="p-4 brutal-border bg-primary text-black font-bold brutal-shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-3 uppercase text-lg">
+            <ShoppingCart className="w-6 h-6" /> Item Shop
+          </Link>
         </nav>
         <div className="mt-auto">
-          <Link href="/" className="p-4 brutal-border bg-white font-bold brutal-shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-3 uppercase">
+          <button 
+            onClick={handleLogout}
+            className="w-full p-4 brutal-border bg-white font-bold brutal-shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-3 uppercase"
+          >
             <LogOut className="w-6 h-6" /> Exit Game
-          </Link>
+          </button>
         </div>
       </aside>
 
@@ -46,7 +65,12 @@ export default function DashboardLayout({
           <span className="text-[10px]">Home</span>
         </Link>
         
-        <Link href="/analyzer" className="relative -top-6 bg-secondary text-white w-16 h-16 brutal-border brutal-shadow flex items-center justify-center hover:-translate-y-1 transition-transform">
+        <Link href="/pricing" className="flex flex-col items-center gap-1 text-black font-bold uppercase p-2">
+          <ShoppingCart className="w-6 h-6" />
+          <span className="text-[10px]">Shop</span>
+        </Link>
+
+        <Link href="/analyzer" className="relative -top-6 bg-secondary text-white w-16 h-16 brutal-border brutal-shadow flex items-center justify-center hover:-translate-y-1 transition-transform z-10">
           <PlusSquare className="w-8 h-8" />
         </Link>
         

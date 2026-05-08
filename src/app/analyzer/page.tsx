@@ -1,19 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { Upload, X, ArrowLeft, RefreshCw, Copy, Check, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Upload, X, ArrowLeft, RefreshCw, Copy, Check, Sparkles, Coins } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 
 import { saveAnalysisToHistory } from "@/lib/history";
+import { getTokenBalance, deductTokens, refundTokens } from "@/lib/tokens";
 
 export default function AnalyzerPage() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [status, setStatus] = useState<"upload" | "analyzing" | "results">("upload");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [analysisData, setAnalysisData] = useState<any>(null);
+  const [tokenBalance, setTokenBalance] = useState<number>(10);
+
+  useEffect(() => {
+    setTokenBalance(getTokenBalance());
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -25,6 +33,24 @@ export default function AnalyzerPage() {
 
   const startAnalysis = async () => {
     if (!file) return;
+
+    // Check token balance before starting
+    const currentBalance = getTokenBalance();
+    if (currentBalance < 5) {
+      alert("You're out of tokens! Redirecting to the Item Shop...");
+      router.push("/pricing");
+      return;
+    }
+
+    // Deduct tokens upfront
+    const success = deductTokens();
+    if (!success) {
+      alert("Not enough tokens! Redirecting to the Item Shop...");
+      router.push("/pricing");
+      return;
+    }
+    setTokenBalance(getTokenBalance());
+
     setStatus("analyzing");
     
     try {
@@ -50,9 +76,13 @@ export default function AnalyzerPage() {
       saveAnalysisToHistory(data);
       setStatus("results");
     } catch (error: any) {
+      // Refund tokens on failure
+      refundTokens();
+      setTokenBalance(getTokenBalance());
+
       let displayMessage = error.message || "Failed to analyze chat. Please try again.";
       if (displayMessage.includes("503") || displayMessage.includes("high demand")) {
-        displayMessage = "The AI is currently experiencing high demand. Please wait a moment and try again.";
+        displayMessage = "The AI is currently experiencing high demand. Please wait a moment and try again. (Tokens refunded!)";
       }
       alert(displayMessage);
       setStatus("upload");
@@ -76,7 +106,10 @@ export default function AnalyzerPage() {
         <div className="font-bold text-2xl font-pixel">
           RIZZLY
         </div>
-        <div className="w-24" /> {/* Spacer */}
+        <Link href="/pricing" className="flex items-center gap-2 bg-primary brutal-border px-3 py-1 font-bold hover:-translate-y-1 transition-transform">
+          <Coins className="w-5 h-5" />
+          <span className="font-pixel text-sm">{tokenBalance}</span>
+        </Link>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-6 w-full max-w-5xl mx-auto relative">
@@ -238,3 +271,4 @@ export default function AnalyzerPage() {
     </div>
   );
 }
+

@@ -84,6 +84,18 @@ Return ONLY a valid JSON object matching this exact structure:
   ]
 }`;
 
+    // === TOKEN DEDUCTION LOGIC ===
+    // In production, you would extract the user_id from the session token
+    // const cookieStore = cookies();
+    // const supabase = createServerClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, { cookies: { get: (name) => cookieStore.get(name)?.value } });
+    // const { data: { user } } = await supabase.auth.getUser();
+    // if (!user) throw new Error("Unauthorized");
+    
+    // We deduct 5 tokens BEFORE the AI call to prevent concurrent race conditions
+    // const { data: success, error: deductError } = await supabase.rpc('deduct_tokens', { user_id: user.id, amount: 5 });
+    // if (!success || deductError) throw new Error("Insufficient tokens. Please purchase more from the Item Shop.");
+    // =============================
+
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: [
@@ -122,6 +134,14 @@ Return ONLY a valid JSON object matching this exact structure:
 
   } catch (error: any) {
     console.error("Error analyzing chat:", error);
+    
+    // === AUTO-REFUND LOGIC ===
+    // If the AI fails or parsing fails, we MUST refund the 5 tokens
+    // if (user) {
+    //   await supabase.rpc('deduct_tokens', { user_id: user.id, amount: -5 });
+    // }
+    // =========================
+
     return NextResponse.json({ error: error.message || "Failed to analyze chat" }, { status: 500 });
   }
 }

@@ -5,17 +5,29 @@ import { Upload, MessageSquare, Zap, Clock } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { getHistory, formatTimeAgo, ChatHistoryItem } from "@/lib/history";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DashboardHome() {
   const [history, setHistory] = useState<ChatHistoryItem[]>([]);
+  const [userName, setUserName] = useState("PLAYER");
   
   useEffect(() => {
-    setHistory(getHistory().slice(0, 3)); // show top 3
+    setHistory(getHistory().slice(0, 5)); // show last 5
+
+    const fetchUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "PLAYER";
+        setUserName(name.toUpperCase());
+      }
+    };
+    fetchUser();
   }, []);
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto space-y-10">
       <header className="space-y-4 border-b-4 border-black pb-8">
-        <h1 className="text-4xl md:text-5xl font-bold font-pixel uppercase tracking-tight">KUNAL</h1>
+        <h1 className="text-4xl md:text-5xl font-bold font-pixel uppercase tracking-tight">{userName}</h1>
         <p className="font-bold text-xl uppercase">Welcome to the lobby</p>
       </header>
 
@@ -79,10 +91,6 @@ export default function DashboardHome() {
                   <h4 className="font-bold text-lg">{item.name}</h4>
                   <span className="text-xs font-bold uppercase text-gray-500">{formatTimeAgo(item.time)}</span>
                 </div>
-              </div>
-              <div className="flex gap-2 w-full md:w-auto">
-                <span className="px-3 py-1 bg-accent brutal-border text-xs font-bold uppercase w-full text-center">{item.vibe}</span>
-                <span className="px-3 py-1 bg-secondary text-white brutal-border text-xs font-bold uppercase w-full text-center">{item.match} SCORE</span>
               </div>
             </div>
           )))}

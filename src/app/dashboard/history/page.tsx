@@ -8,7 +8,7 @@ export default function HistoryPage() {
   const [history, setHistory] = useState<ChatHistoryItem[]>([]);
   
   useEffect(() => {
-    setHistory(getHistory());
+    setHistory(getHistory().slice(0, 5)); // limit to last 5
   }, []);
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto space-y-10">
