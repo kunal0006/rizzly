@@ -1,4 +1,5 @@
 import { Press_Start_2P, Space_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const pixelFont = Press_Start_2P({
@@ -45,6 +46,7 @@ export default function RootLayout({
         className={`${pixelFont.variable} ${monoFont.variable} antialiased bg-white text-black selection:bg-primary selection:text-black min-h-screen`}
       >
         {children}
+        <Analytics />
       </body>
     </html>
   );
