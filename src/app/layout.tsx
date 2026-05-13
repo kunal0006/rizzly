@@ -34,6 +34,8 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+import { CSPostHogProvider } from "./providers";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,11 +43,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light">
-      <body
-        className={`${pixelFont.variable} ${monoFont.variable} antialiased bg-white text-black selection:bg-primary selection:text-black min-h-screen`}
-      >
-        {children}
-      </body>
+      <CSPostHogProvider>
+        <body
+          className={`${pixelFont.variable} ${monoFont.variable} antialiased bg-white text-black selection:bg-primary selection:text-black min-h-screen`}
+        >
+          {children}
+        </body>
+      </CSPostHogProvider>
     </html>
   );
 }
