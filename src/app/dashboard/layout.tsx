@@ -37,6 +37,9 @@ export default function DashboardLayout({
           <Link href="/dashboard/prompts" className="p-4 brutal-border bg-accent text-black font-bold brutal-shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-3 uppercase text-lg">
             <span className="font-pixel text-xs bg-black text-white px-2 py-1 mr-1">NEW</span> Prompts
           </Link>
+          <Link href="/dashboard/target-analyzer" className="p-4 brutal-border bg-secondary text-white font-bold brutal-shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-3 uppercase text-lg">
+            <span className="font-pixel text-xs bg-white text-black px-2 py-1 mr-1">NEW</span> Target AI
+          </Link>
           <Link href="/pricing" className="p-4 brutal-border bg-primary text-black font-bold brutal-shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-3 uppercase text-lg">
             <ShoppingCart className="w-6 h-6" /> Item Shop
           </Link>
@@ -80,6 +83,11 @@ export default function DashboardLayout({
         <Link href="/dashboard/prompts" className="flex flex-col items-center gap-1 text-black font-bold uppercase p-2">
           <span className="font-pixel text-[8px] bg-accent px-1 border border-black mb-1">NEW</span>
           <span className="text-[10px]">Prompts</span>
+        </Link>
+
+        <Link href="/dashboard/target-analyzer" className="flex flex-col items-center gap-1 text-black font-bold uppercase p-2">
+          <span className="font-pixel text-[8px] bg-secondary text-white px-1 border border-black mb-1">NEW</span>
+          <span className="text-[10px]">Target</span>
         </Link>
         
         <Link href="/dashboard/history" className="flex flex-col items-center gap-1 text-black font-bold uppercase p-2">
