@@ -48,3 +48,48 @@ begin
   end if;
 end;
 $$ language plpgsql security definer;
+
+-- ==========================================
+-- V2 EVOLUTION: AI Dating Intelligence Platform
+-- ==========================================
+
+-- Alter Users table for V2 logic (Ultra Pro tier and free limits)
+-- Note: V1 used token_balance, V2 adds plan_type and free_uses
+alter table public.users add column if not exists plan_type text default 'free';
+alter table public.users add column if not exists free_uses_remaining int default 1;
+
+-- USER PERSONAS (Feature 3 Questionnaire)
+create table if not exists public.user_personas (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  vibe text,
+  humor_type text,
+  dating_goals text,
+  personality_traits text[],
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+alter table public.user_personas enable row level security;
+create policy "Users can view/edit their own persona" on public.user_personas for all using (auth.uid() = user_id);
+
+-- ANALYSES HISTORY (Features 1 & 2)
+create table if not exists public.analyses (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  analysis_type text not null, -- 'target_profile', 'self_profile'
+  result_data jsonb not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+alter table public.analyses enable row level security;
+create policy "Users can view their own analyses" on public.analyses for select using (auth.uid() = user_id);
+create policy "Users can insert their own analyses" on public.analyses for insert with check (auth.uid() = user_id);
+
+-- SAVED PROMPTS
+create table if not exists public.saved_prompts (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users(id) on delete cascade not null,
+  prompt_text text not null,
+  tone text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+alter table public.saved_prompts enable row level security;
+create policy "Users can manage their own prompts" on public.saved_prompts for all using (auth.uid() = user_id);
