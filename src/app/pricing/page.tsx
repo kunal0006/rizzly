@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Zap, Star, Shield, Coins } from "lucide-react";
+import { ArrowLeft, Zap, Star, Shield, Coins, Crown } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -24,6 +24,15 @@ export default function PricingPage() {
     { id: "sub_scout", name: "SCOUT", tokens: "100/mo", price: 99, icon: <Zap className="w-6 h-6" /> },
     { id: "sub_alpha", name: "ALPHA", tokens: "400/mo", price: 299, icon: <Star className="w-6 h-6" />, popular: true },
     { id: "sub_grizzly", name: "GRIZZLY+", tokens: "1200/mo", price: 699, icon: <Shield className="w-6 h-6" /> },
+  ];
+
+  const ultraProFeatures = [
+    "Unlimited AI Chat Analyses",
+    "Target Profile Decoder",
+    "Smart Prompt Generator",
+    "Self Profile Optimizer",
+    "Priority AI Processing",
+    "Early Access to New Features",
   ];
 
   const handleCheckout = async (itemId: string, amountInr: number) => {
@@ -93,9 +102,51 @@ export default function PricingPage() {
 
       <main className="max-w-5xl mx-auto px-6 pt-12 w-full">
         <div className="text-center mb-16 border-b-4 border-black pb-8">
-          <h1 className="text-4xl md:text-6xl font-pixel uppercase mb-4">BUY TOKENS</h1>
-          <p className="font-bold text-xl uppercase bg-primary inline-block px-4 py-2 border-2 border-black">1 Analysis = 5 Tokens</p>
+          <h1 className="text-4xl md:text-6xl font-pixel uppercase mb-4">ITEM SHOP</h1>
+          <p className="font-bold text-xl uppercase bg-primary inline-block px-4 py-2 border-2 border-black">Power up your dating game</p>
         </div>
+
+        {/* Ultra Pro Hero Card */}
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="brutal-border brutal-shadow bg-black text-white mb-16 relative overflow-hidden"
+        >
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-black font-bold px-6 py-1 brutal-border text-sm uppercase z-10">
+            ⭐ Ultimate Plan
+          </div>
+          <div className="p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center">
+            <div className="flex-1 space-y-6">
+              <div className="flex items-center gap-3">
+                <Crown className="w-8 h-8 text-accent" />
+                <h2 className="text-3xl md:text-4xl font-pixel uppercase text-accent">Ultra Pro</h2>
+              </div>
+              <p className="font-bold text-gray-300 uppercase text-sm">
+                Everything in Grizzly+ PLUS all AI-powered dating intelligence features. Unlimited.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {ultraProFeatures.map((feat) => (
+                  <div key={feat} className="flex items-center gap-2">
+                    <span className="text-primary">✓</span>
+                    <span className="font-bold text-sm uppercase">{feat}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col items-center gap-4 min-w-[200px]">
+              <div className="text-center">
+                <div className="text-5xl font-bold text-accent">₹1,999</div>
+                <div className="font-bold text-gray-400 uppercase">/month</div>
+              </div>
+              <button
+                onClick={() => handleCheckout("sub_ultra_pro", 1999)}
+                disabled={loadingId === "sub_ultra_pro"}
+                className="w-full bg-accent text-black font-bold border-4 border-accent py-4 brutal-shadow-sm hover:translate-y-1 transition-transform uppercase text-lg font-pixel disabled:opacity-50"
+              >
+                {loadingId === "sub_ultra_pro" ? "Loading..." : "Go Ultra Pro"}
+              </button>
+            </div>
+          </div>
+        </motion.div>
 
         <h2 className="text-3xl font-pixel uppercase mb-8 flex items-center gap-4">
           <Zap className="w-8 h-8" /> SUBSCRIPTIONS

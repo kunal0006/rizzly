@@ -1,23 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PromptOnboarding from "./components/PromptOnboarding";
 import PromptResults from "./components/PromptResults";
+import FreeTrialGate from "@/components/FreeTrialGate";
+import { getUserPlan, consumeFreeUse } from "@/lib/plan-utils";
 import { Loader2 } from "lucide-react";
 
-type Screen = "onboarding" | "generating" | "results";
+type Screen = "loading" | "gate" | "onboarding" | "generating" | "results";
 
 export default function PromptsPage() {
-  const [screen, setScreen] = useState<Screen>("onboarding");
+  const [screen, setScreen] = useState<Screen>("loading");
   const [onboardingData, setOnboardingData] = useState<any>(null);
   const [prompts, setPrompts] = useState<any[]>([]);
   const [isRemixing, setIsRemixing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [freeUses, setFreeUses] = useState(0);
+  const [isPaid, setIsPaid] = useState(false);
+
+  useEffect(() => {
+    async function checkPlan() {
+      const plan = await getUserPlan();
+      const paid = plan.plan === "pro" || plan.plan === "ultra_pro";
+      setIsPaid(paid);
+      setFreeUses(plan.freeUsesRemaining);
+
+      if (paid) {
+        setScreen("onboarding");
+      } else {
+        setScreen("gate");
+      }
+    }
+    checkPlan();
+  }, []);
+
+  const handleUnlockFree = () => {
+    setScreen("onboarding");
+  };
 
   const generatePrompts = async (data: any, isRemix = false) => {
     if (isRemix) {
       setIsRemixing(true);
     } else {
+      // If not paid and not remixing, consume a free use
+      if (!isPaid) {
+        const consumed = await consumeFreeUse();
+        if (!consumed) {
+          setFreeUses(0);
+          setScreen("gate");
+          return;
+        }
+        setFreeUses((prev) => Math.max(0, prev - 1));
+      }
+
       setScreen("generating");
       setOnboardingData(data);
     }
@@ -27,13 +62,10 @@ export default function PromptsPage() {
       const res = await fetch("/api/generate-prompts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // If remixing, we could ask the user for a new tone, or just pass a generic 'Remix' flag.
-        // For now, we'll just resend the same data and tell the AI to give alternative options.
         body: JSON.stringify({ ...data, tone: isRemix ? "Alternative options, be more unhinged" : data.vibe }),
       });
 
       const result = await res.json();
-
       if (!res.ok) throw new Error(result.error || "Generation failed");
 
       setPrompts(result.prompts);
@@ -52,8 +84,30 @@ export default function PromptsPage() {
     }
   };
 
+  if (screen === "loading") {
+    return (
+      <div className="p-6 md:p-10 max-w-5xl mx-auto min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 md:p-10 max-w-5xl mx-auto space-y-10 min-h-screen">
+
+      {screen === "gate" && (
+        <div className="space-y-8">
+          <header className="border-b-4 border-black pb-8">
+            <h1 className="text-4xl md:text-5xl font-bold font-pixel uppercase tracking-tight">Prompt Generator</h1>
+            <p className="font-bold text-xl uppercase mt-3">Stop writing boring bios. Let the AI cook.</p>
+          </header>
+          <FreeTrialGate
+            featureName="Prompt Generator"
+            usesRemaining={freeUses}
+            onContinue={handleUnlockFree}
+          />
+        </div>
+      )}
       
       {screen === "onboarding" && (
         <div className="space-y-10">
@@ -93,7 +147,6 @@ export default function PromptsPage() {
           isRemixing={isRemixing}
         />
       )}
-
     </div>
   );
 }
