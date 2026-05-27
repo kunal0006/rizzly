@@ -1,36 +1,150 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rizzly V2 🦖 — AI Dating Intelligence Platform
 
-## Getting Started
+Welcome to **Rizzly V2**, a premium, high-fidelity AI-powered dating intelligence platform built with a retro neobrutalist cyberpunk visual aesthetic. Rizzly empowers users to optimize their online dating operations through multimodal profile audits, conversational prompt engineering, and deep psychological chat analysis.
 
-First, run the development server:
+This codebase is architected with modern industry best practices, featuring solid server-side security boundaries, database-authoritative state management, and resilient edge rate-limiting wrappers.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🏗️ System Architecture & Tech Stack
+
+Rizzly is engineered on a modern, robust, and highly secure stack:
+
+*   **Framework:** [Next.js 16 (App Router)](https://nextjs.org/) for highly performant hybrid rendering, route grouping, and server-side route protections.
+*   **Database & Authentication:** [Supabase](https://supabase.com/) (PostgreSQL + GoTrue Auth) providing secure authentication, structured schemas, Row-Level Security (RLS) data isolation, and transactional database procedures (`deduct_tokens`).
+*   **State & Rate Limiting:** [Upstash Redis](https://upstash.com/) for low-latency, sliding-window API rate limiting (5 requests/60s) to protect costly AI endpoints from automated abuse and vector attacks.
+*   **Artificial Intelligence:** [Google Gemini 2.5 Flash](https://aistudio.google.com/) multimodal AI engine leveraging native Structured Outputs (JSON Schemas) to guarantee strict response integrity.
+*   **Payment & Subscriptions:** [Razorpay Subscriptions](https://razorpay.com/) integrated with robust server-side webhook endpoints to automatically synchronize plan upgrades (`pro` / `ultra_pro`) in real time.
+*   **Analytics:** [PostHog](https://posthog.com/) for privacy-focused, premium client-side product metrics and click-tracking.
+*   **Styling & Motion:** [Tailwind CSS v4](https://tailwindcss.com/) + [Framer Motion](https://www.framer.com/motion/) for fluid transitions, glassmorphism filters, and a neobrutalist retro pixel-art appearance.
+
+---
+
+## 📂 Project Directory Structure
+
+```filepath
+rizzly/
+├── public/                     # Static media assets and retro pixel indicators
+├── src/
+│   ├── app/                    # Next.js App Router Tree
+│   │   ├── analyzer/           # Feature 1: Wingman Chat screenshot analyzer
+│   │   ├── api/                # Authoritative server-side API endpoints
+│   │   │   ├── analyze/        # POST: Chat wingman Gemini analyzer
+│   │   │   ├── analyze-profile/# POST: Self profile audit Gemini optimizer
+│   │   │   ├── analyze-target/ # POST: Target psychology decoding route
+│   │   │   ├── create-order/   # POST: Razorpay transaction initialization
+│   │   │   ├── generate-prompts/# POST: Conversational prompt generator route
+│   │   │   ├── verify-payment/ # POST: Razorpay signature verification
+│   │   │   └── webhooks/       # POST: Razorpay tier-sync webhooks
+│   │   ├── auth/               # Supabase callback handlers & oauth helpers
+│   │   ├── dashboard/          # Authenticated User Control Panel
+│   │   │   ├── history/        # History page: Filter tabs, dynamic search & detailed modals
+│   │   │   ├── profile-analyzer/# Feature 2: Self profile optimizer screen
+│   │   │   ├── prompts/        # Feature 3: Smart onboarding questionnaire & prompt favorite list
+│   │   │   ├── target-analyzer/# Feature 1: Target psychology analyzer upload screen
+│   │   │   ├── layout.tsx      # Neobrutalist Desktop/Mobile global sidebar wrapper
+│   │   │   └── page.tsx        # Dashboard Landing: dynamic stats sync'd to Supabase
+│   │   ├── login/              # Secure auth login view
+│   │   ├── pricing/            # Monetization card catalog
+│   │   ├── signup/             # Secure user signup view
+│   │   ├── globals.css         # Main Neobrutalist design tokens & shadows
+│   │   ├── layout.tsx          # Root HTML frame & modern Google Font loading
+│   │   └── providers.tsx       # Auth status & PostHog initialization wrapper
+│   ├── components/             # Reusable UI component catalog
+│   │   ├── ui/                 # Atomic neobrutalist items (buttons, inputs)
+│   │   └── FreeTrialGate.tsx   # Glassmorphism trial expiration wall
+│   ├── lib/                    # Shared system core services & libraries
+│   │   ├── supabase/           # Isomorphic Supabase client creators (Server/Client context)
+│   │   ├── history.ts          # Time formatting & legacy client utilities
+│   │   ├── plan-utils.ts       # Database-backed tier validation & free use checks
+│   │   ├── rate-limit.ts       # Upstash sliding-window Redis rate-limiter
+│   │   ├── tokens.ts           # Client-side optimistic token balance helpers
+│   │   └── utils.ts            # Dynamic CSS utility functions
+│   └── middleware.ts           # Router-level auth guard protecting dashboard routes
+├── .env.example                # Blueprint for local/production configuration
+├── package.json                # Project dependencies & operational script runners
+├── supabase_schema.sql         # SQL source-of-truth migrations & RLS policies
+└── tsconfig.json               # Type-safe compiler configuration
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔒 Security Design & Boundaries
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Rizzly enforces strict security boundaries to prevent malicious access and ensure key isolation:
 
-## Learn More
+### 1. Zero-Exposure Frontend
+No sensitive operational keys (`GEMINI_API_KEY`, `RAZORPAY_KEY_SECRET`, or `ANTHROPIC_API_KEY`) are ever exposed to the client-side bundle. Only safe, public identifiers prefixed with `NEXT_PUBLIC_` are delivered to the browser.
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Double-Gated Token/Use Deduction
+*   **Frontend (Optimistic UX):** Client checks local storage balances or database use flags to prevent user-facing lag and render warnings instantly.
+*   **Backend (Authoritative Enforcement):** All expensive AI route calls verify active authentication states, validate remaining uses in Postgres, and deduct tokens server-side using secure Postgres transactional functions (`deduct_tokens`). Failed executions automatically trigger atomic transaction refunds.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Edge Rate Limiting
+All generative endpoints are wrapped with an edge rate-limiting shield (`checkRateLimit()`) using **Upstash sliding-window Redis**. Rate limits are bound to the authenticated user ID (`user.id`) or fall back gracefully to client IP addresses to prevent automated cost depletion attacks.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 💾 Database Schema & RLS Policies
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The database is built on a PostgreSQL schema, featuring **Row-Level Security (RLS)** to guarantee absolute data isolation. Users can never read or write records belonging to other players.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Core Tables:
+*   `public.users`: Core customer model. Houses `plan_type` (`free`, `pro`, `ultra_pro`), `free_uses_remaining`, and token balances.
+*   `public.analyses`: Primary operational history store. Holds raw multimodal payloads generated by Gemini for `chat_analysis`, `target_profile`, and `self_profile` formats.
+    *   *RLS Check:* `auth.uid() = user_id` for select and insert.
+*   `public.saved_prompts`: User prompts inventory. Stores favorited prompt cards in rich JSON strings.
+    *   *RLS Check:* `auth.uid() = user_id` for all CRUD operations.
+
+---
+
+## 🛠️ Development & Deployment Instructions
+
+### 1. Environment Configuration
+Create a `.env.local` file at the root directory following the parameters outlined in `.env.example`:
+
+```env
+# Gemini AI Configuration
+GEMINI_API_KEY=AIzaSy...
+
+# Supabase Project Identifiers (Safe for public bundle)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+
+# Upstash Redis Connection (Server-side only)
+UPSTASH_REDIS_REST_URL=https://your-db.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-token...
+
+# Razorpay Subscriptions (Secret remains hidden)
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_ID=rzp_live_...
+RAZORPAY_KEY_SECRET=Tw7H...
+```
+
+### 2. Database Initialization
+Execute the SQL commands inside [`supabase_schema.sql`](file:///Users/kunalsharma/Wingman/rizzly/supabase_schema.sql) in your Supabase SQL Editor. This will automatically:
+1. Generate structural schemas for users, personas, transactional purchases, analyses, and saved prompts.
+2. Enable RLS on all operational history and prompts tables.
+3. Install secure procedural functions, including the concurrency-safe `deduct_tokens` function.
+
+### 3. Running the Development Server
+Install dependencies and launch the dev environment locally:
+
+```bash
+# Install npm packages
+npm install
+
+# Start Next.js turbopack server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view and test your changes.
+
+### 4. Compiling a Production Build
+Compile and verify typing integrity before deploying to production:
+
+```bash
+npm run build
+```
+
+This enforces strict TypeScript checks, creates optimized edge bundles, and structures static segments securely.

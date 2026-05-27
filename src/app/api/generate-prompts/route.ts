@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const SYSTEM_PROMPT = `You are an elite, modern dating profile ghostwriter and attraction strategist. 
 Your goal is to write Hinge and Bumble prompts that are witty, highly personalized, and psychologically optimized to get matches and start conversations.
@@ -20,6 +22,22 @@ Format:
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate Limiting Check
+    const rateLimitCheck = await checkRateLimit(user.id);
+    if (!rateLimitCheck.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down (limit is 5 requests/min)." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const {
       gender,

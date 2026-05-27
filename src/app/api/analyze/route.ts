@@ -1,8 +1,26 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate Limiting Check
+    const rateLimitCheck = await checkRateLimit(user.id);
+    if (!rateLimitCheck.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down (limit is 5 requests/min)." },
+        { status: 429 }
+      );
+    }
+
     const formData = await request.formData();
     const image = formData.get("image") as File;
 
@@ -32,7 +50,8 @@ export async function POST(request: Request) {
         "If I'm not busy taking a nap, maybe we can link."
       ];
       const random = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-      return NextResponse.json({
+      
+      const mockAnalysis = {
         interestLevel: Math.floor(Math.random() * (98 - 75 + 1) + 75),
         interestLabel: "High",
         vibeSummary: "They're definitely engaged! The quick response times and use of emojis indicate strong interest. They're leaving the conversation open-ended, waiting for you to make a move.",
@@ -41,7 +60,16 @@ export async function POST(request: Request) {
           { type: "💀 Funny", text: random(funnyReplies) },
           { type: "🖤 Nonchalant", text: random(nonchalantReplies) }
         ]
+      };
+
+      // Save to Supabase analyses table
+      await supabase.from("analyses").insert({
+        user_id: user.id,
+        analysis_type: "chat_analysis",
+        result_data: mockAnalysis
       });
+
+      return NextResponse.json(mockAnalysis);
     }
 
     // REAL AI INTEGRATION
@@ -54,46 +82,45 @@ export async function POST(request: Request) {
     const mimeType = image.type;
 
     const prompt = `You are an expert dating wingman and social intelligence AI. 
-Analyze the provided chat screenshot. Read the conversation carefully.
+    Analyze the provided chat screenshot. Read the conversation carefully.
 
-Identify:
-1. The interest level of the other person (0-100).
-2. A short label for the interest (e.g., "High", "Medium", "Low", "Ghosted").
-3. A 2-3 sentence summary of the "Vibe Check" (what's the tone, are they engaged, what's the subtext?).
-4. Provide exactly 3 suggested replies for the user to send next, categorized into these three types EXACTLY:
-   - "🔥 Smooth"
-   - "💀 Funny"
-   - "🖤 Nonchalant"
+    Identify:
+    1. The interest level of the other person (0-100).
+    2. A short label for the interest (e.g., "High", "Medium", "Low", "Ghosted").
+    3. A 2-3 sentence summary of the "Vibe Check" (what's the tone, are they engaged, what's the subtext?).
+    4. Provide exactly 3 suggested replies for the user to send next, categorized into these three types EXACTLY:
+       - "🔥 Smooth"
+       - "💀 Funny"
+       - "🖤 Nonchalant"
 
-CRITICAL TONE INSTRUCTIONS FOR REPLIES:
-- Keep the tone EXTREMELY casual, like Gen-Z texting. 
-- Do NOT sound professional, robotic, or overly enthusiastic.
-- Use all lowercase letters. No periods at the end of sentences.
-- Use common texting slang where appropriate (e.g., "rn", "ngl", "fr", "wya").
-- Keep replies short and punchy.
+    CRITICAL TONE INSTRUCTIONS FOR REPLIES:
+    - Keep the tone EXTREMELY casual, like Gen-Z texting. 
+    - Do NOT sound professional, robotic, or overly enthusiastic.
+    - Use all lowercase letters. No periods at the end of sentences.
+    - Use common texting slang where appropriate (e.g., "rn", "ngl", "fr", "wya").
+    - Keep replies short and punchy.
 
-Return ONLY a valid JSON object matching this exact structure:
-{
-  "interestLevel": 85,
-  "interestLabel": "High",
-  "vibeSummary": "...",
-  "replies": [
-    { "type": "🔥 Smooth", "text": "..." },
-    { "type": "💀 Funny", "text": "..." },
-    { "type": "🖤 Nonchalant", "text": "..." }
-  ]
-}`;
+    Return ONLY a valid JSON object matching this exact structure:
+    {
+      "interestLevel": 85,
+      "interestLabel": "High",
+      "vibeSummary": "...",
+      "replies": [
+        { "type": "🔥 Smooth", "text": "..." },
+        { "type": "💀 Funny", "text": "..." },
+        { "type": "🖤 Nonchalant", "text": "..." }
+      ]
+    }`;
 
     // === TOKEN DEDUCTION LOGIC ===
-    // In production, you would extract the user_id from the session token
-    // const cookieStore = cookies();
-    // const supabase = createServerClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, { cookies: { get: (name) => cookieStore.get(name)?.value } });
-    // const { data: { user } } = await supabase.auth.getUser();
-    // if (!user) throw new Error("Unauthorized");
-    
     // We deduct 5 tokens BEFORE the AI call to prevent concurrent race conditions
-    // const { data: success, error: deductError } = await supabase.rpc('deduct_tokens', { user_id: user.id, amount: 5 });
-    // if (!success || deductError) throw new Error("Insufficient tokens. Please purchase more from the Item Shop.");
+    const { data: success, error: deductError } = await supabase.rpc('deduct_tokens', { user_id: user.id, amount: 5 });
+    if (!success || deductError) {
+      return NextResponse.json(
+        { error: "Insufficient tokens. Please purchase more from the Item Shop." },
+        { status: 403 }
+      );
+    }
     // =============================
 
     const response = await ai.models.generateContent({
@@ -121,7 +148,7 @@ Return ONLY a valid JSON object matching this exact structure:
       throw new Error("No response from AI");
     }
 
-    let jsonString = response.text;
+    let jsonString = response.text.trim();
     // Strip markdown code blocks if the model wrapped the JSON
     if (jsonString.startsWith("```json")) {
       jsonString = jsonString.replace(/^```json\n/, "").replace(/\n```$/, "");
@@ -130,16 +157,30 @@ Return ONLY a valid JSON object matching this exact structure:
     }
 
     const analysis = JSON.parse(jsonString);
+
+    // Save to Supabase analyses table
+    await supabase.from("analyses").insert({
+      user_id: user.id,
+      analysis_type: "chat_analysis",
+      result_data: analysis
+    });
+
     return NextResponse.json(analysis);
 
   } catch (error: any) {
     console.error("Error analyzing chat:", error);
     
     // === AUTO-REFUND LOGIC ===
-    // If the AI fails or parsing fails, we MUST refund the 5 tokens
-    // if (user) {
-    //   await supabase.rpc('deduct_tokens', { user_id: user.id, amount: -5 });
-    // }
+    // If the AI fails or parsing fails, we refund the 5 tokens
+    try {
+      const supabase = await createServerSupabaseClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.rpc('deduct_tokens', { user_id: user.id, amount: -5 });
+      }
+    } catch (refundErr) {
+      console.error("Deduct refund failed:", refundErr);
+    }
     // =========================
 
     return NextResponse.json({ error: error.message || "Failed to analyze chat" }, { status: 500 });

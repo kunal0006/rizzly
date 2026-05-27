@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const SYSTEM_PROMPT = `You are a world-class dating profile strategist specialising in Tinder, Hinge, and Bumble.
 Analyse every uploaded image carefully — profile screenshots AND individual photos.
@@ -18,6 +20,22 @@ Return ONLY valid JSON with no markdown fences or preamble:
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Rate Limiting Check
+    const rateLimitCheck = await checkRateLimit(user.id);
+    if (!rateLimitCheck.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please slow down (limit is 5 requests/min)." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const {
       screenshots = [],
@@ -112,6 +130,14 @@ export async function POST(request: Request) {
     }
 
     const analysis = JSON.parse(jsonString);
+
+    // Save to Supabase
+    await supabase.from("analyses").insert({
+      user_id: user.id,
+      analysis_type: "self_profile",
+      result_data: analysis
+    });
+
     return NextResponse.json(analysis);
   } catch (error: unknown) {
     console.error("Profile analysis error:", error);
