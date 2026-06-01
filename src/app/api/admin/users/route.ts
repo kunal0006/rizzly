@@ -19,19 +19,13 @@ export async function GET(request: Request) {
 
     let query = supabase
       .from('users')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range(from, to);
+      .select('*')
+      .order('created_at', { ascending: false });
 
-    if (search) {
-      query = query.ilike('email', `%${search}%`);
-    }
-
-    const { data: users, error, count } = await query;
+    const { data: allUsers, error } = await query;
     if (error) throw error;
 
-    // Get analysis counts per user
-    const userIds = users?.map((u: any) => u.id) || [];
+    const userIds = allUsers?.map((u: any) => u.id) || [];
     let analysisCountMap: Record<string, number> = {};
 
     if (userIds.length > 0) {
@@ -47,17 +41,47 @@ export async function GET(request: Request) {
       }
     }
 
-    const enrichedUsers = (users || []).map((u: any) => ({
+    // Fetch emails from Supabase Auth
+    let emailMap: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const emailPromises = userIds.map(async (id: string) => {
+        try {
+          const { data } = await supabase.auth.admin.getUserById(id);
+          if (data?.user?.email) {
+            emailMap[id] = data.user.email;
+          }
+        } catch (e) {
+          // Ignore individual fetch errors
+        }
+      });
+      await Promise.all(emailPromises);
+    }
+
+    // Enrich all users with emails and analysis counts
+    let enrichedUsers = (allUsers || []).map((u: any) => ({
       ...u,
+      email: u.email || emailMap[u.id] || "No Email",
       api_calls: analysisCountMap[u.id] || 0,
     }));
 
+    // Perform search in-memory
+    if (search) {
+      const searchLower = search.toLowerCase();
+      enrichedUsers = enrichedUsers.filter(u => u.email.toLowerCase().includes(searchLower));
+    }
+
+    const total = enrichedUsers.length;
+    const totalPages = Math.ceil(total / pageSize);
+    
+    // Paginate in-memory
+    const paginatedUsers = enrichedUsers.slice(from, from + pageSize);
+
     return NextResponse.json({
-      users: enrichedUsers,
-      total: count || 0,
+      users: paginatedUsers,
+      total,
       page,
       pageSize,
-      totalPages: Math.ceil((count || 0) / pageSize),
+      totalPages,
     });
   } catch (error) {
     console.error('Admin users GET error:', error);
