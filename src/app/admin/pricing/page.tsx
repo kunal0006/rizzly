@@ -24,7 +24,14 @@ export default function PricingManagerPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.config?.value) {
-          setPlans(JSON.parse(data.config.value));
+          try {
+            const parsed = typeof data.config.value === 'string' 
+              ? JSON.parse(data.config.value) 
+              : data.config.value;
+            setPlans(parsed);
+          } catch (e) {
+            console.error("Failed to parse config:", e);
+          }
         }
         setLoading(false);
       })

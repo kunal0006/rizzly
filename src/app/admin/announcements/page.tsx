@@ -38,7 +38,14 @@ export default function AnnouncementsPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.config?.value) {
-          setAnnouncement(JSON.parse(data.config.value));
+          try {
+            const parsed = typeof data.config.value === 'string' 
+              ? JSON.parse(data.config.value) 
+              : data.config.value;
+            setAnnouncement(parsed);
+          } catch (e) {
+            console.error("Failed to parse config:", e);
+          }
         }
         setLoading(false);
       })

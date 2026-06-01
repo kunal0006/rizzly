@@ -56,7 +56,14 @@ export default function FeaturesPage() {
       .then((r) => r.json())
       .then((data) => {
         if (data.config?.value) {
-          setFlags(JSON.parse(data.config.value));
+          try {
+            const parsed = typeof data.config.value === 'string' 
+              ? JSON.parse(data.config.value) 
+              : data.config.value;
+            setFlags(parsed);
+          } catch (e) {
+            console.error("Failed to parse config:", e);
+          }
         } else {
           setFlags({
             profile_analyzer_enabled: true,
