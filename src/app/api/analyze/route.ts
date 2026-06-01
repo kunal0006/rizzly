@@ -3,6 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   try {
     const supabase = await createServerSupabaseClient();

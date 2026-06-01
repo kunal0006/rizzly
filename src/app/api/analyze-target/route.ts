@@ -3,6 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+export const maxDuration = 60;
+
 const SYSTEM_PROMPT = `You're a friend who's annoyingly good at reading people on dating apps.
 Someone just showed you their crush's dating profile and wants your honest take + a game plan.
 

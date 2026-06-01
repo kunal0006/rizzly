@@ -3,6 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+export const maxDuration = 60;
+
 const SYSTEM_PROMPT = `You are an elite, modern dating profile ghostwriter and attraction strategist. 
 Your goal is to write Hinge and Bumble prompts that are witty, highly personalized, and psychologically optimized to get matches and start conversations.
 Do NOT write generic, cringy, or try-hard prompts. The tone must perfectly match the user's requested vibe.

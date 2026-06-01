@@ -17,11 +17,31 @@ export default function TargetUpload({ onAnalyze }: TargetUploadProps) {
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith("image/")) return;
       const reader = new FileReader();
+      reader.readAsDataURL(file);
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        setScreenshots((prev) => [...prev, result]);
+        const img = new Image();
+        img.src = result;
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+          }
+          setScreenshots((prev) => [...prev, canvas.toDataURL("image/jpeg", 0.7)]);
+        };
       };
-      reader.readAsDataURL(file);
     });
   }, []);
 

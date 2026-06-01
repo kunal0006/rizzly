@@ -3,6 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+export const maxDuration = 60;
+
 const SYSTEM_PROMPT = `You're basically a dating app wingman who's really good at this stuff. You know Tinder, Hinge, and Bumble inside out.
 Look at all the uploaded images — profile screenshots AND individual photos.
 
