@@ -42,17 +42,6 @@ export default function PromptsPage() {
     if (isRemix) {
       setIsRemixing(true);
     } else {
-      // If not paid and not remixing, consume a free use
-      if (!isPaid) {
-        const consumed = await consumeFreeUse();
-        if (!consumed) {
-          setFreeUses(0);
-          setScreen("gate");
-          return;
-        }
-        setFreeUses((prev) => Math.max(0, prev - 1));
-      }
-
       setScreen("generating");
       setOnboardingData(data);
     }
@@ -67,6 +56,16 @@ export default function PromptsPage() {
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Generation failed");
+
+      if (!isRemix && !isPaid) {
+        const consumed = await consumeFreeUse();
+        if (!consumed) {
+          setFreeUses(0);
+          setScreen("gate");
+          return;
+        }
+        setFreeUses((prev) => Math.max(0, prev - 1));
+      }
 
       setPrompts(result.prompts);
       setScreen("results");

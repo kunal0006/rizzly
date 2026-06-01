@@ -55,16 +55,6 @@ export default function ProfileAnalyzerPage() {
     photos: string[],
     app: string | null
   ) => {
-    if (!hasAccess) {
-      const consumed = await consumeFreeUse("profile-analyzer");
-      if (!consumed) {
-        setFreeUses(0);
-        setScreen("gate");
-        return;
-      }
-      setFreeUses((prev) => Math.max(0, prev - 1));
-    }
-
     setScreen("analyzing");
     setError(null);
 
@@ -79,6 +69,16 @@ export default function ProfileAnalyzerPage() {
 
       if (!res.ok) {
         throw new Error(data.error || "Analysis failed");
+      }
+
+      if (!hasAccess) {
+        const consumed = await consumeFreeUse("profile-analyzer");
+        if (!consumed) {
+          setFreeUses(0);
+          setScreen("gate");
+          return;
+        }
+        setFreeUses((prev) => Math.max(0, prev - 1));
       }
 
       setResult(data);

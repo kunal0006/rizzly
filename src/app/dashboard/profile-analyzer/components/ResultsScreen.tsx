@@ -200,9 +200,9 @@ export default function ResultsScreen({ result, onRedo }: ResultsScreenProps) {
 
         {/* Section 4 — Photos */}
         <Section title="PHOTO ANALYSIS" accent="#ff2d7c" badge="ULTRA PRO">
-          <p style={bodyText}>{result.photos.feedback}</p>
+          <p style={bodyText}>{result.photos?.feedback}</p>
           <ul style={{ listStyle: "none", padding: 0, margin: "14px 0 0" }}>
-            {result.photos.tips.map((tip, i) => (
+            {result.photos?.tips?.map((tip, i) => (
               <li
                 key={i}
                 style={{
@@ -259,7 +259,7 @@ export default function ResultsScreen({ result, onRedo }: ResultsScreenProps) {
         {/* Section 6 — Game Plan */}
         <Section title="YOUR GAME PLAN" accent="#a855f7">
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {result.actions.map((action, i) => (
+            {result.actions?.map((action, i) => (
               <div
                 key={i}
                 style={{
@@ -304,9 +304,9 @@ export default function ResultsScreen({ result, onRedo }: ResultsScreenProps) {
         </Section>
 
         {/* Section 7 — App Secrets */}
-        <Section title={`${result.app.toUpperCase()} SECRETS`} accent="#38bdf8">
+        <Section title={`${result.app?.toUpperCase() || "APP"} SECRETS`} accent="#38bdf8">
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {result.appTips.map((tip, i) => (
+            {result.appTips?.map((tip, i) => (
               <div
                 key={i}
                 style={{
