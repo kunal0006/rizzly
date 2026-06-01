@@ -5,8 +5,10 @@ import UploadScreen from "./components/UploadScreen";
 import AnalyzingScreen from "./components/AnalyzingScreen";
 import ResultsScreen from "./components/ResultsScreen";
 import UltraProGate from "./components/UltraProGate";
+import { getUserPlan, consumeFreeUse } from "@/lib/plan-utils";
+import { Loader2 } from "lucide-react";
 
-type Screen = "upload" | "analyzing" | "results";
+type Screen = "loading" | "gate" | "upload" | "analyzing" | "results";
 
 interface AnalysisResult {
   app: string;
@@ -21,22 +23,48 @@ interface AnalysisResult {
 }
 
 export default function ProfileAnalyzerPage() {
-  const [isUltraPro, setIsUltraPro] = useState<boolean | null>(null);
-  const [screen, setScreen] = useState<Screen>("upload");
+  const [screen, setScreen] = useState<Screen>("loading");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [freeUses, setFreeUses] = useState(0);
+  const [hasAccess, setHasAccess] = useState(false);
 
-  // Check Ultra Pro status on mount (client-side only)
   useEffect(() => {
-    const plan = localStorage.getItem("rizzly_plan");
-    setIsUltraPro(plan === "ultra_pro");
+    async function checkPlan() {
+      const plan = await getUserPlan();
+      // Profile analyzer is an ultra_pro feature for unlimited uses
+      const isUltraPro = plan.plan === "ultra_pro";
+      setHasAccess(isUltraPro);
+      setFreeUses(plan.freeUsesRemaining);
+
+      if (isUltraPro) {
+        setScreen("upload");
+      } else {
+        setScreen("gate");
+      }
+    }
+    checkPlan();
   }, []);
+
+  const handleUnlockFree = () => {
+    setScreen("upload");
+  };
 
   const handleAnalyze = async (
     screenshots: string[],
     photos: string[],
     app: string | null
   ) => {
+    if (!hasAccess) {
+      const consumed = await consumeFreeUse("profile-analyzer");
+      if (!consumed) {
+        setFreeUses(0);
+        setScreen("gate");
+        return;
+      }
+      setFreeUses((prev) => Math.max(0, prev - 1));
+    }
+
     setScreen("analyzing");
     setError(null);
 
@@ -65,11 +93,14 @@ export default function ProfileAnalyzerPage() {
   const handleRedo = () => {
     setResult(null);
     setError(null);
-    setScreen("upload");
+    if (hasAccess) {
+      setScreen("upload");
+    } else {
+      setScreen("gate");
+    }
   };
 
-  // Still checking plan status
-  if (isUltraPro === null) {
+  if (screen === "loading") {
     return (
       <div
         className="pa-root"
@@ -105,11 +136,56 @@ export default function ProfileAnalyzerPage() {
         overflowX: "hidden",
       }}
     >
-      {/* Ultra Pro gate */}
-      {!isUltraPro && <UltraProGate />}
+      {screen === "gate" && (
+        <>
+          {freeUses > 0 ? (
+            <div style={{ padding: "40px 20px", maxWidth: "800px", margin: "0 auto", marginTop: "40px" }}>
+              <div
+                style={{
+                  background: "#13131e",
+                  border: "2px solid #ffd600",
+                  padding: "40px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "24px",
+                  textAlign: "center",
+                  boxShadow: "0 0 40px #ffd60020",
+                }}
+              >
+                <div style={{ background: "#ffd600", color: "#000", padding: "6px 12px", fontFamily: "'Press Start 2P'", fontSize: "12px", textTransform: "uppercase" }}>
+                  FREE TRIAL
+                </div>
+                <p style={{ fontWeight: "bold", textTransform: "uppercase", fontSize: "16px", color: "#b0b0cc" }}>
+                  You have <span style={{ color: "#ffd600", fontFamily: "'Press Start 2P'", fontSize: "14px" }}>{freeUses}</span> free Profile Analyzer use{freeUses > 1 ? "s" : ""} remaining
+                </p>
+                <button
+                  onClick={handleUnlockFree}
+                  style={{
+                    background: "#ffd600",
+                    color: "#000",
+                    padding: "16px 32px",
+                    fontFamily: "'Press Start 2P'",
+                    fontSize: "12px",
+                    textTransform: "uppercase",
+                    border: "none",
+                    cursor: "pointer",
+                    boxShadow: "4px 4px 0px #a89000",
+                    marginTop: "16px",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Use Free Trial
+                </button>
+              </div>
+            </div>
+          ) : (
+            <UltraProGate />
+          )}
+        </>
+      )}
 
-      {/* Main content (only shown to Ultra Pro users) */}
-      {isUltraPro && (
+      {(screen === "upload" || screen === "analyzing" || screen === "results") && (
         <>
           {error && (
             <div

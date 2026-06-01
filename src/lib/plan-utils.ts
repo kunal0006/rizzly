@@ -33,7 +33,7 @@ export async function getUserPlan(): Promise<UserPlan> {
       }
       return {
         plan: (data.plan_type || "free") as PlanType,
-        freeUsesRemaining: data.free_uses_remaining ?? 0,
+        freeUsesRemaining: data.free_uses_remaining ?? 1,
       };
     }
   } catch {
@@ -53,7 +53,7 @@ export async function getUserPlan(): Promise<UserPlan> {
 /**
  * Decrement a free use for a given user. Returns false if no uses remain.
  */
-export async function consumeFreeUse(): Promise<boolean> {
+export async function consumeFreeUse(feature?: string): Promise<boolean> {
   try {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -68,15 +68,21 @@ export async function consumeFreeUse(): Promise<boolean> {
 
     if (!data) return false;
 
-    // Paid users have unlimited uses
-    if (data.plan_type === "pro" || data.plan_type === "ultra_pro") return true;
+    const isUltraProReq = feature ? isUltraProFeature(feature) : false;
 
-    if ((data.free_uses_remaining ?? 0) <= 0) return false;
+    // Paid users have unlimited uses, subject to feature tier
+    if (data.plan_type === "ultra_pro") return true;
+    if (data.plan_type === "pro" && !isUltraProReq) return true;
 
-    await supabase
+    const uses = data.free_uses_remaining ?? 1;
+    if (uses <= 0) return false;
+
+    const { error } = await supabase
       .from("users")
-      .update({ free_uses_remaining: (data.free_uses_remaining ?? 1) - 1 })
+      .update({ free_uses_remaining: uses - 1 })
       .eq("id", user.id);
+
+    if (error) return false;
 
     return true;
   } catch {
