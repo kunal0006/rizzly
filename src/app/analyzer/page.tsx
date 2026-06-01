@@ -103,9 +103,9 @@ export default function AnalyzerPage() {
           <ArrowLeft className="w-5 h-5" />
           <span>Exit</span>
         </Link>
-        <div className="font-bold text-2xl font-pixel">
+        <Link href="/dashboard" className="font-bold text-2xl font-pixel hover:text-gray-700 transition-colors">
           RIZZLY
-        </div>
+        </Link>
         <Link href="/pricing" className="flex items-center gap-2 bg-primary brutal-border px-3 py-1 font-bold hover:-translate-y-1 transition-transform">
           <Coins className="w-5 h-5" />
           <span className="font-pixel text-sm">{tokenBalance}</span>

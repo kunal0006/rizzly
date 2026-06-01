@@ -24,7 +24,7 @@ export default function DashboardLayout({
       
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="w-64 border-r-4 border-black bg-white hidden md:flex flex-col h-screen sticky top-0 p-6 z-50">
-        <Link href="/" className="font-bold text-3xl font-pixel text-black mb-12 brutal-border p-2 text-center brutal-shadow-sm bg-primary">
+        <Link href="/dashboard" className="font-bold text-3xl font-pixel text-black mb-12 brutal-border p-2 text-center brutal-shadow-sm bg-primary">
           RIZZLY
         </Link>
         <nav className="flex-1 flex flex-col gap-4">
@@ -57,7 +57,7 @@ export default function DashboardLayout({
       {/* Main Content */}
       <main className="flex-1 w-full bg-white relative">
         <div className="md:hidden w-full border-b-4 border-black bg-white p-4 flex justify-between items-center z-50 sticky top-0">
-           <Link href="/" className="font-bold text-xl font-pixel text-black">
+           <Link href="/dashboard" className="font-bold text-xl font-pixel text-black">
             RIZZLY
           </Link>
         </div>

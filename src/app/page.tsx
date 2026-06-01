@@ -1,6 +1,7 @@
 import { Upload, BrainCircuit, MessageCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import AuthNav from "@/components/AuthNav";
 
 export default function Home() {
   return (
@@ -10,14 +11,10 @@ export default function Home() {
         
         {/* Navigation */}
         <nav className="w-full flex justify-between items-center bg-white brutal-border brutal-shadow-sm p-4 rounded-xl">
-          <div className="text-xl md:text-2xl pt-1">
+          <div className="text-xl md:text-2xl pt-1 font-pixel">
             RIZZLY
           </div>
-          <div className="flex gap-4">
-            <Link href="/login" className="bg-secondary text-white font-bold px-4 py-2 text-sm brutal-border brutal-shadow-sm flex items-center justify-center">
-              LOGIN
-            </Link>
-          </div>
+          <AuthNav />
         </nav>
 
         {/* Hero Section */}
