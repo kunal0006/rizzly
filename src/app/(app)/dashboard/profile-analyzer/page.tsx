@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import UploadScreen from "./components/UploadScreen";
-import AnalyzingScreen from "./components/AnalyzingScreen";
-import ResultsScreen from "./components/ResultsScreen";
-import UltraProGate from "./components/UltraProGate";
+import { UploadScreen, AnalyzingScreen, ResultsScreen, UltraProGate } from "@/features/profile-analyzer";
 import { getUserPlan, consumeFreeUse } from "@/lib/plan-utils";
 import { Loader2 } from "lucide-react";
 

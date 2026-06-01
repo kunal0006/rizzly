@@ -1,7 +1,7 @@
 import { Upload, BrainCircuit, MessageCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import AuthNav from "@/components/AuthNav";
+import { AuthNav } from "@/features/auth";
 
 export default function Home() {
   return (

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import PromptOnboarding from "./components/PromptOnboarding";
-import PromptResults from "./components/PromptResults";
-import FreeTrialGate from "@/components/FreeTrialGate";
+import { PromptOnboarding, PromptResults } from "@/features/prompts";
+import FreeTrialGate from "@/components/common/FreeTrialGate";
 import { getUserPlan, consumeFreeUse } from "@/lib/plan-utils";
 import { Loader2 } from "lucide-react";
 

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import TargetUpload from "./components/TargetUpload";
-import TargetResults from "./components/TargetResults";
-import FreeTrialGate from "@/components/FreeTrialGate";
+import { TargetUpload, TargetResults } from "@/features/target-analyzer";
+import FreeTrialGate from "@/components/common/FreeTrialGate";
 import { getUserPlan, consumeFreeUse } from "@/lib/plan-utils";
 import { Loader2 } from "lucide-react";
 

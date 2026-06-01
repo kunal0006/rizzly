@@ -27,40 +27,27 @@ rizzly/
 ├── public/                     # Static media assets and retro pixel indicators
 ├── src/
 │   ├── app/                    # Next.js App Router Tree
-│   │   ├── analyzer/           # Feature 1: Wingman Chat screenshot analyzer
-│   │   ├── api/                # Authoritative server-side API endpoints
-│   │   │   ├── analyze/        # POST: Chat wingman Gemini analyzer
-│   │   │   ├── analyze-profile/# POST: Self profile audit Gemini optimizer
-│   │   │   ├── analyze-target/ # POST: Target psychology decoding route
-│   │   │   ├── create-order/   # POST: Razorpay transaction initialization
-│   │   │   ├── generate-prompts/# POST: Conversational prompt generator route
-│   │   │   ├── verify-payment/ # POST: Razorpay signature verification
-│   │   │   └── webhooks/       # POST: Razorpay tier-sync webhooks
-│   │   ├── auth/               # Supabase callback handlers & oauth helpers
-│   │   ├── dashboard/          # Authenticated User Control Panel
-│   │   │   ├── history/        # History page: Filter tabs, dynamic search & detailed modals
-│   │   │   ├── profile-analyzer/# Feature 2: Self profile optimizer screen
-│   │   │   ├── prompts/        # Feature 3: Smart onboarding questionnaire & prompt favorite list
-│   │   │   ├── target-analyzer/# Feature 1: Target psychology analyzer upload screen
-│   │   │   ├── layout.tsx      # Neobrutalist Desktop/Mobile global sidebar wrapper
-│   │   │   └── page.tsx        # Dashboard Landing: dynamic stats sync'd to Supabase
-│   │   ├── login/              # Secure auth login view
-│   │   ├── pricing/            # Monetization card catalog
-│   │   ├── signup/             # Secure user signup view
-│   │   ├── globals.css         # Main Neobrutalist design tokens & shadows
-│   │   ├── layout.tsx          # Root HTML frame & modern Google Font loading
-│   │   └── providers.tsx       # Auth status & PostHog initialization wrapper
+│   │   ├── (marketing)/        # Route group for public pages (login, signup, pricing)
+│   │   ├── (app)/              # Route group for authenticated pages (dashboard layout)
+│   │   ├── admin/              # Admin panel pages
+│   │   └── api/                # Authoritative server-side API endpoints
+│   ├── features/               # Feature-sliced component modules
+│   │   ├── auth/               # Authentication UI and hooks
+│   │   ├── profile-analyzer/   # Wingman Chat screenshot analyzer
+│   │   ├── target-analyzer/    # Target psychology decoding feature
+│   │   └── prompts/            # Conversational prompt generator feature
 │   ├── components/             # Reusable UI component catalog
-│   │   ├── ui/                 # Atomic neobrutalist items (buttons, inputs)
-│   │   └── FreeTrialGate.tsx   # Glassmorphism trial expiration wall
+│   │   ├── common/             # Global components (FreeTrialGate, Navbar)
+│   │   ├── layout/             # Layout components (Sidebar)
+│   │   └── ui/                 # Atomic neobrutalist items
+│   ├── hooks/                  # Global React hooks
 │   ├── lib/                    # Shared system core services & libraries
-│   │   ├── supabase/           # Isomorphic Supabase client creators (Server/Client context)
-│   │   ├── history.ts          # Time formatting & legacy client utilities
-│   │   ├── plan-utils.ts       # Database-backed tier validation & free use checks
-│   │   ├── rate-limit.ts       # Upstash sliding-window Redis rate-limiter
-│   │   ├── tokens.ts           # Client-side optimistic token balance helpers
-│   │   └── utils.ts            # Dynamic CSS utility functions
-│   └── middleware.ts           # Router-level auth guard protecting dashboard routes
+│   │   ├── supabase/           # Isomorphic Supabase client creators
+│   │   ├── history.ts          # History utilities
+│   │   ├── plan-utils.ts       # Database-backed tier validation
+│   │   ├── rate-limit.ts       # Upstash sliding-window rate-limiter
+│   │   └── tokens.ts           # Token balance helpers
+│   └── styles/                 # Global CSS and Tailwind directives
 ├── .env.example                # Blueprint for local/production configuration
 ├── package.json                # Project dependencies & operational script runners
 ├── supabase_schema.sql         # SQL source-of-truth migrations & RLS policies

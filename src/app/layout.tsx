@@ -1,5 +1,5 @@
 import { Press_Start_2P, Space_Mono } from "next/font/google";
-import "./globals.css";
+import "@/styles/globals.css";
 
 const pixelFont = Press_Start_2P({
   variable: "--font-pixel",
