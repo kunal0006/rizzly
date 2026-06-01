@@ -47,7 +47,12 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetch("/api/admin/stats")
-      .then((r) => r.json())
+      .then((r) => {
+        if (r.status === 401) {
+          window.location.href = "/admin/login";
+        }
+        return r.json();
+      })
       .then((data) => {
         setStats(data);
         setLoading(false);

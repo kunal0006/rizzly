@@ -53,7 +53,12 @@ export default function FeaturesPage() {
 
   useEffect(() => {
     fetch("/api/admin/config?key=feature_flags")
-      .then((r) => r.json())
+      .then((r) => {
+        if (r.status === 401) {
+          window.location.href = "/admin/login";
+        }
+        return r.json();
+      })
       .then((data) => {
         if (data.config?.value) {
           try {
@@ -83,11 +88,18 @@ export default function FeaturesPage() {
     if (!flags) return;
     setSaving(true);
     try {
-      await fetch("/api/admin/config", {
+      const res = await fetch("/api/admin/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "feature_flags", value: flags }),
       });
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = "/admin/login";
+          return;
+        }
+        throw new Error("Failed to save");
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {

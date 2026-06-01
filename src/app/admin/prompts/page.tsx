@@ -56,7 +56,12 @@ export default function PromptsPage() {
 
   useEffect(() => {
     fetch("/api/admin/prompts")
-      .then((r) => r.json())
+      .then((r) => {
+        if (r.status === 401) {
+          window.location.href = "/admin/login";
+        }
+        return r.json();
+      })
       .then((data) => {
         const merged: Record<string, string> = {};
         Object.entries(defaultPrompts).forEach(([key, config]) => {
@@ -71,11 +76,18 @@ export default function PromptsPage() {
   const handleSave = async (key: string) => {
     setSavingKey(key);
     try {
-      await fetch("/api/admin/prompts", {
+      const res = await fetch("/api/admin/prompts", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ promptKey: key, content: prompts[key] }),
       });
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = "/admin/login";
+          return;
+        }
+        throw new Error("Failed to save");
+      }
       setSavedKey(key);
       setTimeout(() => setSavedKey(null), 2000);
     } catch {

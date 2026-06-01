@@ -21,7 +21,12 @@ export default function PricingManagerPage() {
 
   useEffect(() => {
     fetch("/api/admin/config?key=pricing_plans")
-      .then((r) => r.json())
+      .then((r) => {
+        if (r.status === 401) {
+          window.location.href = "/admin/login";
+        }
+        return r.json();
+      })
       .then((data) => {
         if (data.config?.value) {
           try {
@@ -41,11 +46,18 @@ export default function PricingManagerPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch("/api/admin/config", {
+      const res = await fetch("/api/admin/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "pricing_plans", value: plans }),
       });
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = "/admin/login";
+          return;
+        }
+        throw new Error("Failed to save");
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
