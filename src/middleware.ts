@@ -1,7 +1,55 @@
 import { createServerClient } from '@supabase/ssr'
+import { jwtVerify } from 'jose'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const ADMIN_COOKIE_NAME = 'admin_token'
+
+async function verifyAdminTokenInMiddleware(token: string): Promise<boolean> {
+  try {
+    const secret = process.env.ADMIN_JWT_SECRET
+    if (!secret) return false
+    const key = new TextEncoder().encode(secret)
+    await jwtVerify(token, key)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // ─── Admin Route Protection ───────────────────────────
+  if (pathname.startsWith('/admin')) {
+    // Allow access to admin login page without auth
+    if (pathname === '/admin/login') {
+      // If already authenticated, redirect to dashboard
+      const adminToken = request.cookies.get(ADMIN_COOKIE_NAME)?.value
+      if (adminToken && await verifyAdminTokenInMiddleware(adminToken)) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/admin/dashboard'
+        return NextResponse.redirect(url)
+      }
+      return NextResponse.next()
+    }
+
+    // Allow admin API routes to handle their own auth
+    if (pathname.startsWith('/admin') && pathname.includes('/api/')) {
+      return NextResponse.next()
+    }
+
+    // Protect all other /admin/* routes
+    const adminToken = request.cookies.get(ADMIN_COOKIE_NAME)?.value
+    if (!adminToken || !(await verifyAdminTokenInMiddleware(adminToken))) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/admin/login'
+      return NextResponse.redirect(url)
+    }
+
+    return NextResponse.next()
+  }
+
+  // ─── Existing Supabase User Auth ──────────────────────
   let supabaseResponse = NextResponse.next({
     request,
   })

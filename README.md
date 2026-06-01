@@ -148,3 +148,44 @@ npm run build
 ```
 
 This enforces strict TypeScript checks, creates optimized edge bundles, and structures static segments securely.
+
+---
+
+## 🛡️ Admin Panel
+
+Rizzly includes a full-featured admin panel accessible at `/admin`. The admin panel uses a dark retro pixel-art theme and is completely isolated from the main user-facing app.
+
+### Quick Setup
+
+1. **Add env vars** to `.env.local`:
+```env
+ADMIN_EMAIL=admin@rizzly.com
+ADMIN_PASSWORD=your_secure_password_here
+ADMIN_JWT_SECRET=a_random_32_character_string_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_from_supabase
+```
+
+2. **Run the SQL migration** — execute `admin_schema.sql` in your Supabase SQL Editor to create the admin tables (`admin_config`, `prompt_versions`, `coupons`, `coupon_redemptions`, `feedback`).
+
+3. **Access the panel** at `http://localhost:3000/admin` — log in with your `ADMIN_EMAIL` and `ADMIN_PASSWORD`.
+
+### Admin Routes
+
+| Route | Feature |
+|---|---|
+| `/admin/dashboard` | Overview stats: users, API calls, revenue, system health |
+| `/admin/pricing` | Edit pricing plans (name, price, features, visibility) |
+| `/admin/features` | Feature flags & toggles (maintenance mode, signups, API limits) |
+| `/admin/prompts` | AI prompt editor with test button & version history |
+| `/admin/users` | Paginated user table, search, plan override, CSV export |
+| `/admin/analytics` | Charts: daily API calls, feature usage, plan distribution |
+| `/admin/coupons` | Coupon code manager: create, bulk generate, pause, export |
+| `/admin/announcements` | Sitewide announcement banner manager with live preview |
+| `/admin/feedback` | User feedback inbox with read/star/resolve actions |
+| `/admin/settings` | Integration health checks & environment info |
+
+### Security
+- Admin authentication is **separate from user auth** (JWT cookie, not Supabase Auth)
+- All `/admin/*` routes are protected via middleware
+- Admin API routes use the Supabase **service role key** to bypass RLS
+- No admin credentials are exposed to the client bundle
