@@ -140,21 +140,40 @@ export async function POST(request: Request) {
       contents: [{ role: "user", parts }],
       config: {
         responseMimeType: "application/json",
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_NONE",
+          },
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_NONE",
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_NONE",
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_NONE",
+          }
+        ]
       },
     });
 
     if (!response.text) {
-      throw new Error("No response from Gemini");
+      throw new Error("No response from Gemini or response was blocked");
     }
 
-    let jsonString = response.text.trim();
-    if (jsonString.startsWith("```json")) {
-      jsonString = jsonString.replace(/^```json\n?/, "").replace(/\n?```$/, "");
-    } else if (jsonString.startsWith("```")) {
-      jsonString = jsonString.replace(/^```\n?/, "").replace(/\n?```$/, "");
+    // Safely extract JSON using regex in case of conversational wrapper
+    const text = response.text.trim();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("Failed to find JSON in response:", text);
+      throw new Error("Invalid response format");
     }
 
-    const analysis = JSON.parse(jsonString);
+    const analysis = JSON.parse(jsonMatch[0]);
 
     // Save to Supabase
     await supabase.from("analyses").insert({

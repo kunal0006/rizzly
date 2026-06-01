@@ -71,26 +71,43 @@ export async function POST(request: Request) {
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: [
-        { role: "user", parts: [{ text: SYSTEM_PROMPT + "\n\n" + userContext }] }
-      ],
+      contents: [{ role: "user", parts: [{ text: SYSTEM_PROMPT + "\n\n" + userContext }] }],
       config: {
         responseMimeType: "application/json",
+        safetySettings: [
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_NONE",
+          },
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_NONE",
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_NONE",
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_NONE",
+          }
+        ]
       },
     });
 
     if (!response.text) {
-      throw new Error("No response from Gemini");
+      throw new Error("No response from Gemini or response was blocked");
     }
 
-    let jsonString = response.text.trim();
-    if (jsonString.startsWith("```json")) {
-      jsonString = jsonString.replace(/^```json\n?/, "").replace(/\n?```$/, "");
-    } else if (jsonString.startsWith("```")) {
-      jsonString = jsonString.replace(/^```\n?/, "").replace(/\n?```$/, "");
+    // Safely extract JSON using regex in case of conversational wrapper
+    const text = response.text.trim();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.error("Failed to find JSON in response:", text);
+      throw new Error("Invalid response format");
     }
 
-    const prompts = JSON.parse(jsonString);
+    const prompts = JSON.parse(jsonMatch[0]);
     return NextResponse.json({ prompts });
   } catch (error: unknown) {
     console.error("Prompt generation error:", error);
