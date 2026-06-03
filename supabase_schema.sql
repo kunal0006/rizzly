@@ -15,6 +15,34 @@ alter table public.users enable row level security;
 create policy "Users can view their own profile" on public.users for select using (auth.uid() = id);
 create policy "Users can update their own free uses" on public.users for update using (auth.uid() = id) with check (auth.uid() = id);
 
+-- TRIGGER TO AUTO-POPULATE PUBLIC.USERS ON SIGNUP
+create or replace function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.users (id, email, token_balance, subscription_tier, plan_type, free_uses_remaining)
+  values (new.id, new.email, 10, 'Cub', 'free', 1);
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create or replace trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- SYNC EXISTING AUTH USERS TO PUBLIC.USERS (Run this once)
+insert into public.users (id, email, token_balance, subscription_tier, plan_type, free_uses_remaining, created_at)
+select 
+  id, 
+  email, 
+  10 as token_balance, 
+  'Cub' as subscription_tier, 
+  'free' as plan_type, 
+  1 as free_uses_remaining,
+  created_at
+from auth.users
+on conflict (id) do nothing;
+
+
 -- TRANSACTIONS TABLE
 create table if not exists public.transactions (
   id uuid default uuid_generate_v4() primary key,

@@ -20,11 +20,30 @@ export async function getUserPlan(): Promise<UserPlan> {
       return { plan: "free", freeUsesRemaining: 1 };
     }
 
-    const { data } = await supabase
+    let { data, error } = await supabase
       .from("users")
       .select("plan_type, free_uses_remaining")
       .eq("id", user.id)
       .single();
+
+    if (error || !data) {
+      // Row might be missing! Let's trigger sync on the server side
+      try {
+        const syncRes = await fetch("/api/users/sync", { method: "POST" });
+        if (syncRes.ok) {
+          const { data: retryData } = await supabase
+            .from("users")
+            .select("plan_type, free_uses_remaining")
+            .eq("id", user.id)
+            .single();
+          if (retryData) {
+            data = retryData;
+          }
+        }
+      } catch (syncErr) {
+        console.error("getUserPlan: error during auto-sync:", syncErr);
+      }
+    }
 
     if (data) {
       // Sync to localStorage for fast client-side checks
@@ -60,14 +79,33 @@ export async function consumeFreeUse(feature?: string): Promise<boolean> {
 
     if (!user) return false;
 
-    const { data, error: selectError } = await supabase
+    let { data, error: selectError } = await supabase
       .from("users")
       .select("free_uses_remaining, plan_type")
       .eq("id", user.id)
       .single();
 
     if (selectError || !data) {
-      console.error("consumeFreeUse: failed to fetch user data", selectError);
+      // Auto-sync if record is missing
+      try {
+        const syncRes = await fetch("/api/users/sync", { method: "POST" });
+        if (syncRes.ok) {
+          const { data: retryData } = await supabase
+            .from("users")
+            .select("free_uses_remaining, plan_type")
+            .eq("id", user.id)
+            .single();
+          if (retryData) {
+            data = retryData;
+          }
+        }
+      } catch (syncErr) {
+        console.error("consumeFreeUse: auto-sync error:", syncErr);
+      }
+    }
+
+    if (!data) {
+      console.error("consumeFreeUse: failed to fetch user data after sync");
       return false;
     }
 
@@ -96,6 +134,7 @@ export async function consumeFreeUse(feature?: string): Promise<boolean> {
     return false;
   }
 }
+
 
 /**
  * Check if a feature requires Ultra Pro specifically.

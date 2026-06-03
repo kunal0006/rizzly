@@ -38,13 +38,25 @@ export default function PromptsPage() {
   };
 
   const generatePrompts = async (data: any, isRemix = false) => {
+    setError(null);
+
+    // Consume a free use BEFORE making the expensive API call
+    if (!isRemix && !isPaid) {
+      const consumed = await consumeFreeUse();
+      if (!consumed) {
+        setFreeUses(0);
+        setScreen("gate");
+        return;
+      }
+      setFreeUses((prev) => Math.max(0, prev - 1));
+    }
+
     if (isRemix) {
       setIsRemixing(true);
     } else {
       setScreen("generating");
       setOnboardingData(data);
     }
-    setError(null);
 
     try {
       const res = await fetch("/api/generate-prompts", {
@@ -55,16 +67,6 @@ export default function PromptsPage() {
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Generation failed");
-
-      if (!isRemix && !isPaid) {
-        const consumed = await consumeFreeUse();
-        if (!consumed) {
-          setFreeUses(0);
-          setScreen("gate");
-          return;
-        }
-        setFreeUses((prev) => Math.max(0, prev - 1));
-      }
 
       setPrompts(result.prompts);
       setScreen("results");
