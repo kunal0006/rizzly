@@ -162,7 +162,13 @@ export async function POST(request: Request) {
     });
 
     if (!response.text) {
-      throw new Error("No response from Gemini or response was blocked");
+      const blockReason = response.promptFeedback?.blockReason;
+      console.error("Gemini returned no text. Block reason:", blockReason, "Candidates:", JSON.stringify(response.candidates));
+      throw new Error(
+        blockReason
+          ? `Content was blocked by safety filters (${blockReason}). Try different screenshots.`
+          : "No response from Gemini. The content may have been blocked by safety filters. Try different screenshots."
+      );
     }
 
     // Safely extract JSON using regex in case of conversational wrapper
@@ -170,21 +176,33 @@ export async function POST(request: Request) {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       console.error("Failed to find JSON in response:", text);
-      throw new Error("Invalid response format");
+      throw new Error("Invalid response format from AI");
     }
 
-    const analysis = JSON.parse(jsonMatch[0]);
+    let analysis;
+    try {
+      analysis = JSON.parse(jsonMatch[0]);
+    } catch (parseErr) {
+      console.error("JSON parse error:", parseErr, "Raw text:", text);
+      throw new Error("Failed to parse AI response");
+    }
 
-    // Save to Supabase
-    await supabase.from("analyses").insert({
-      user_id: user.id,
-      analysis_type: "target_profile",
-      result_data: analysis
-    });
+    // Save to Supabase (non-fatal — don't let a DB error kill the response)
+    try {
+      await supabase.from("analyses").insert({
+        user_id: user.id,
+        analysis_type: "target_profile",
+        result_data: analysis,
+      });
+    } catch (dbErr) {
+      console.error("Failed to save analysis to DB (non-fatal):", dbErr);
+    }
 
     return NextResponse.json(analysis);
   } catch (error: unknown) {
-    console.error("Target analysis error:", error);
-    return NextResponse.json({ error: "Analysis failed" }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : "Analysis failed";
+    console.error("Target analysis error:", message, error);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

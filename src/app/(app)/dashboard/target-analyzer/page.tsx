@@ -46,8 +46,20 @@ export default function TargetAnalyzerPage() {
   };
 
   const handleAnalyze = async (screenshots: string[]) => {
-    setScreen("analyzing");
     setError(null);
+
+    // Consume a free use BEFORE making the expensive API call
+    if (!isPaid) {
+      const consumed = await consumeFreeUse();
+      if (!consumed) {
+        setFreeUses(0);
+        setScreen("gate");
+        return;
+      }
+      setFreeUses((prev) => Math.max(0, prev - 1));
+    }
+
+    setScreen("analyzing");
 
     const interval = setInterval(() => {
       setAnalyzingMsg((prev) => (prev + 1) % ANALYZING_MESSAGES.length);
@@ -62,17 +74,6 @@ export default function TargetAnalyzerPage() {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Analysis failed");
-
-      // If not paid, consume a free use
-      if (!isPaid) {
-        const consumed = await consumeFreeUse();
-        if (!consumed) {
-          setFreeUses(0);
-          setScreen("gate");
-          return;
-        }
-        setFreeUses((prev) => Math.max(0, prev - 1));
-      }
 
       setResult(data);
       setScreen("results");

@@ -60,13 +60,16 @@ export async function consumeFreeUse(feature?: string): Promise<boolean> {
 
     if (!user) return false;
 
-    const { data } = await supabase
+    const { data, error: selectError } = await supabase
       .from("users")
       .select("free_uses_remaining, plan_type")
       .eq("id", user.id)
       .single();
 
-    if (!data) return false;
+    if (selectError || !data) {
+      console.error("consumeFreeUse: failed to fetch user data", selectError);
+      return false;
+    }
 
     const isUltraProReq = feature ? isUltraProFeature(feature) : false;
 
@@ -77,15 +80,19 @@ export async function consumeFreeUse(feature?: string): Promise<boolean> {
     const uses = data.free_uses_remaining ?? 1;
     if (uses <= 0) return false;
 
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from("users")
       .update({ free_uses_remaining: uses - 1 })
       .eq("id", user.id);
 
-    if (error) return false;
+    if (updateError) {
+      console.error("consumeFreeUse: failed to update free_uses_remaining", updateError);
+      return false;
+    }
 
     return true;
-  } catch {
+  } catch (err) {
+    console.error("consumeFreeUse: unexpected error", err);
     return false;
   }
 }

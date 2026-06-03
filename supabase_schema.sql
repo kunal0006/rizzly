@@ -13,6 +13,7 @@ create table if not exists public.users (
 -- RLS for Users
 alter table public.users enable row level security;
 create policy "Users can view their own profile" on public.users for select using (auth.uid() = id);
+create policy "Users can update their own free uses" on public.users for update using (auth.uid() = id) with check (auth.uid() = id);
 
 -- TRANSACTIONS TABLE
 create table if not exists public.transactions (

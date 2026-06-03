@@ -52,8 +52,20 @@ export default function ProfileAnalyzerPage() {
     photos: string[],
     app: string | null
   ) => {
-    setScreen("analyzing");
     setError(null);
+
+    // Consume a free use BEFORE making the expensive API call
+    if (!hasAccess) {
+      const consumed = await consumeFreeUse("profile-analyzer");
+      if (!consumed) {
+        setFreeUses(0);
+        setScreen("gate");
+        return;
+      }
+      setFreeUses((prev) => Math.max(0, prev - 1));
+    }
+
+    setScreen("analyzing");
 
     try {
       const res = await fetch("/api/analyze-profile", {
@@ -66,16 +78,6 @@ export default function ProfileAnalyzerPage() {
 
       if (!res.ok) {
         throw new Error(data.error || "Analysis failed");
-      }
-
-      if (!hasAccess) {
-        const consumed = await consumeFreeUse("profile-analyzer");
-        if (!consumed) {
-          setFreeUses(0);
-          setScreen("gate");
-          return;
-        }
-        setFreeUses((prev) => Math.max(0, prev - 1));
       }
 
       setResult(data);
