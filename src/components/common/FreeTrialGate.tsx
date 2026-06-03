@@ -35,9 +35,9 @@ export default function FreeTrialGate({ featureName, usesRemaining, onContinue }
       <div className="w-20 h-20 bg-black brutal-border brutal-shadow-sm flex items-center justify-center">
         <Lock className="w-10 h-10 text-accent" />
       </div>
-      <h2 className="text-2xl md:text-3xl font-pixel uppercase">Free Trial Used</h2>
+      <h2 className="text-2xl md:text-3xl font-pixel uppercase">Premium Feature</h2>
       <p className="font-bold text-gray-500 uppercase text-sm max-w-md">
-        You've used your free {featureName} analysis. Upgrade to Ultra Pro for unlimited access to all AI features.
+        Upgrade to Ultra Pro for unlimited access to the {featureName} and all AI features.
       </p>
       <Link
         href="/pricing"
