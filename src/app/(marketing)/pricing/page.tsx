@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Zap, Star, Shield, Coins, Crown, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,6 +16,13 @@ export default function PricingPage() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [sdkReady, setSdkReady] = useState(false);
+
+  useEffect(() => {
+    // If Razorpay SDK is already loaded on window (e.g. navigation or cached script)
+    if (typeof window !== "undefined" && window.Razorpay) {
+      setSdkReady(true);
+    }
+  }, []);
 
   const showSuccess = (message: string) => {
     setSuccessToast(message);
@@ -103,8 +110,9 @@ export default function PricingPage() {
       {/* Load Razorpay SDK properly via next/script */}
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="lazyOnload"
+        strategy="afterInteractive"
         onLoad={() => setSdkReady(true)}
+        onReady={() => setSdkReady(true)}
       />
 
       {/* Success Toast */}
