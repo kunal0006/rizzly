@@ -18,13 +18,22 @@ export async function GET() {
       .eq("id", user.id)
       .single();
 
-    if (error || !data) {
-      return NextResponse.json({ tokenBalance: 0 });
+    // Distinguish a genuine "not found" from a DB/network error.
+    // Never silently return 0 on a lookup failure — the caller should know.
+    if (error) {
+      console.error("Balance lookup error:", error.message);
+      return NextResponse.json(
+        { error: "Failed to fetch token balance." },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ tokenBalance: data.token_balance ?? 0 });
+    return NextResponse.json({ tokenBalance: data?.token_balance ?? 0 });
   } catch (error) {
     console.error("Balance fetch error:", error);
-    return NextResponse.json({ tokenBalance: 0 });
+    return NextResponse.json(
+      { error: "Failed to fetch token balance." },
+      { status: 500 }
+    );
   }
 }

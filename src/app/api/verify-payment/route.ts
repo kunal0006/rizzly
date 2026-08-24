@@ -48,8 +48,24 @@ export async function POST(req: NextRequest) {
       .eq("status", "created")
       .single();
 
-    if (txError || !transaction) {
-      console.error("Transaction not found or already processed:", txError);
+    // Distinguish a DB/network error from a genuine "not found / already paid"
+    if (txError) {
+      if (txError.code === "PGRST116") {
+        // PostgREST "no rows" code — order unknown or already processed
+        return NextResponse.json(
+          { error: "Transaction not found or already processed." },
+          { status: 404 }
+        );
+      }
+      // Any other code is a real DB error — don't pretend the order is unknown
+      console.error("DB error looking up transaction:", txError);
+      return NextResponse.json(
+        { error: "Failed to look up transaction. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    if (!transaction) {
       return NextResponse.json(
         { error: "Transaction not found or already processed." },
         { status: 404 }
@@ -61,40 +77,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // ── 3. Mark transaction as paid ──────────────────────────────────
-    await adminSupabase
-      .from("transactions")
-      .update({
-        status: "paid",
-        razorpay_payment_id,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", transaction.id);
-
-    // ── 4. Add tokens to user ────────────────────────────────────────
+    // ── 3. Atomic fulfillment: mark paid + add tokens in one RPC ─────
+    // The `fulfill_payment` RPC does both inside a single DB transaction,
+    // so there is no window where the order is "paid" but tokens aren't added.
     const tokensToAdd = transaction.tokens_added ?? 0;
-    if (tokensToAdd > 0) {
-      // Try the atomic RPC first; fall back to a read-then-write
-      const { error: rpcError } = await adminSupabase.rpc("add_tokens", {
-        p_user_id: user.id,
-        p_amount: tokensToAdd,
-      });
+    const { error: fulfillError } = await adminSupabase.rpc("fulfill_payment", {
+      p_transaction_id: transaction.id,
+      p_payment_id: razorpay_payment_id,
+      p_user_id: user.id,
+      p_tokens: tokensToAdd,
+    });
 
-      if (rpcError) {
-        console.warn("add_tokens RPC unavailable, using fallback:", rpcError.message);
-        // Fallback: fetch current balance and increment directly
-        const { data: currentUser } = await adminSupabase
-          .from("users")
-          .select("token_balance")
-          .eq("id", user.id)
-          .single();
-
-        const newBalance = (currentUser?.token_balance ?? 0) + tokensToAdd;
-        await adminSupabase
-          .from("users")
-          .update({ token_balance: newBalance })
-          .eq("id", user.id);
-      }
+    if (fulfillError) {
+      console.error("fulfill_payment RPC failed:", fulfillError.message);
+      return NextResponse.json(
+        { error: "Payment was verified but fulfillment failed. Contact support." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(

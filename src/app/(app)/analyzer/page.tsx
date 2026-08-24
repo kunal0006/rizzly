@@ -23,15 +23,17 @@ export default function AnalyzerPage() {
     // Show cached value immediately, then sync from DB
     setTokenBalance(getTokenBalance());
     fetch("/api/users/balance")
-      .then((r) => r.json())
-      .then(({ tokenBalance }) => {
-        if (typeof tokenBalance === "number") {
-          // Sync DB value into localStorage so future calls are accurate
-          localStorage.setItem("rizzly_token_balance", String(tokenBalance));
-          setTokenBalance(tokenBalance);
+      .then((r) => {
+        if (!r.ok) return; // keep cached value on error — don't show wrong 0
+        return r.json();
+      })
+      .then((data) => {
+        if (data && typeof data.tokenBalance === "number") {
+          localStorage.setItem("rizzly_token_balance", String(data.tokenBalance));
+          setTokenBalance(data.tokenBalance);
         }
       })
-      .catch(() => {/* silently use cached value */});
+      .catch(() => {/* silently keep cached value */});
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

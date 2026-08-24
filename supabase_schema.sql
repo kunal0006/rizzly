@@ -78,14 +78,56 @@ begin
 end;
 $$ language plpgsql security definer;
 
--- FUNCTION: Secure Token Addition (used for payment fulfillment)
--- Run this in the Supabase SQL Editor if not already present.
+-- FUNCTION: Secure Token Addition
+-- Restricted to service_role only — never callable by client/anon/authenticated.
 create or replace function add_tokens(p_user_id uuid, p_amount integer)
 returns void as $$
 begin
   update public.users set token_balance = token_balance + p_amount where id = p_user_id;
 end;
 $$ language plpgsql security definer;
+
+-- Revoke public access so only the backend (service_role) can call add_tokens.
+revoke execute on function add_tokens(uuid, integer) from public, anon, authenticated;
+grant  execute on function add_tokens(uuid, integer) to   service_role;
+
+-- FUNCTION: Atomic Payment Fulfillment
+-- Marks a transaction as paid AND adds tokens to the user in a single DB
+-- transaction — eliminates any partial-state window.
+-- Also restricted to service_role.
+create or replace function fulfill_payment(
+  p_transaction_id uuid,
+  p_payment_id     text,
+  p_user_id        uuid,
+  p_tokens         integer
+)
+returns void as $$
+begin
+  -- Mark the transaction as paid (idempotency: only update if still "created")
+  update public.transactions
+  set
+    status               = 'paid',
+    razorpay_payment_id  = p_payment_id,
+    updated_at           = now()
+  where
+    id     = p_transaction_id
+    and status = 'created';
+
+  -- If no row was updated the order was already fulfilled — raise to caller
+  if not found then
+    raise exception 'Transaction % already processed or not found', p_transaction_id
+      using errcode = 'P0002';
+  end if;
+
+  -- Add tokens atomically in the same transaction
+  update public.users
+  set token_balance = token_balance + p_tokens
+  where id = p_user_id;
+end;
+$$ language plpgsql security definer;
+
+revoke execute on function fulfill_payment(uuid, text, uuid, integer) from public, anon, authenticated;
+grant  execute on function fulfill_payment(uuid, text, uuid, integer) to   service_role;
 
 -- ==========================================
 -- V2 EVOLUTION: AI Dating Intelligence Platform

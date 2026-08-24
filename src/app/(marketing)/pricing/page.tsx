@@ -15,6 +15,7 @@ declare global {
 export default function PricingPage() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [sdkReady, setSdkReady] = useState(false);
 
   const showSuccess = (message: string) => {
     setSuccessToast(message);
@@ -103,6 +104,7 @@ export default function PricingPage() {
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="lazyOnload"
+        onLoad={() => setSdkReady(true)}
       />
 
       {/* Success Toast */}
@@ -168,10 +170,10 @@ export default function PricingPage() {
               </div>
               <button
                 onClick={() => handleCheckout("sub_ultra_pro")}
-                disabled={loadingId === "sub_ultra_pro"}
+                disabled={loadingId === "sub_ultra_pro" || !sdkReady}
                 className="w-full bg-accent text-black font-bold border-4 border-accent py-4 brutal-shadow-sm hover:translate-y-1 transition-transform uppercase text-lg font-pixel disabled:opacity-50"
               >
-                {loadingId === "sub_ultra_pro" ? "Loading..." : "Go Ultra Pro"}
+                {loadingId === "sub_ultra_pro" ? "Loading..." : !sdkReady ? "Initialising..." : "Go Ultra Pro"}
               </button>
             </div>
           </div>
@@ -203,10 +205,10 @@ export default function PricingPage() {
                 </div>
                 <button
                   onClick={() => handleCheckout(sub.id)}
-                  disabled={loadingId === sub.id}
+                  disabled={loadingId === sub.id || !sdkReady}
                   className="w-full bg-primary text-black font-bold border-4 border-black py-3 brutal-shadow-sm hover:translate-y-1 transition-transform uppercase disabled:opacity-50"
                 >
-                  {loadingId === sub.id ? "Loading..." : "Subscribe"}
+                  {loadingId === sub.id ? "Loading..." : !sdkReady ? "Initialising..." : "Subscribe"}
                 </button>
               </div>
             </motion.div>
@@ -236,10 +238,10 @@ export default function PricingPage() {
                 <div className="text-3xl font-pixel mb-6">₹{pack.price}</div>
                 <button
                   onClick={() => handleCheckout(pack.id)}
-                  disabled={loadingId === pack.id}
+                  disabled={loadingId === pack.id || !sdkReady}
                   className="w-full bg-black text-white font-bold border-4 border-black py-3 brutal-shadow-sm hover:bg-gray-800 transition-colors uppercase disabled:opacity-50"
                 >
-                  {loadingId === pack.id ? "Loading..." : "Buy Now"}
+                  {loadingId === pack.id ? "Loading..." : !sdkReady ? "Initialising..." : "Buy Now"}
                 </button>
               </div>
             </motion.div>

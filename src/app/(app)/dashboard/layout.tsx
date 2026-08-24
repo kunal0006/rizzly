@@ -16,9 +16,12 @@ export default function DashboardLayout({
 
   useEffect(() => {
     fetch("/api/users/balance")
-      .then((r) => r.json())
-      .then(({ tokenBalance }) => {
-        if (typeof tokenBalance === "number") setTokenBalance(tokenBalance);
+      .then((r) => {
+        if (!r.ok) return; // keep existing state on error
+        return r.json();
+      })
+      .then((data) => {
+        if (data && typeof data.tokenBalance === "number") setTokenBalance(data.tokenBalance);
       })
       .catch(() => {});
   }, []);
