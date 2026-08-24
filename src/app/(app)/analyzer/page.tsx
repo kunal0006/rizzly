@@ -20,7 +20,18 @@ export default function AnalyzerPage() {
   const [tokenBalance, setTokenBalance] = useState<number>(10);
 
   useEffect(() => {
+    // Show cached value immediately, then sync from DB
     setTokenBalance(getTokenBalance());
+    fetch("/api/users/balance")
+      .then((r) => r.json())
+      .then(({ tokenBalance }) => {
+        if (typeof tokenBalance === "number") {
+          // Sync DB value into localStorage so future calls are accurate
+          localStorage.setItem("rizzly_token_balance", String(tokenBalance));
+          setTokenBalance(tokenBalance);
+        }
+      })
+      .catch(() => {/* silently use cached value */});
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

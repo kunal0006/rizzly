@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Zap, Star, Shield, Coins, Crown } from "lucide-react";
+import { ArrowLeft, Zap, Star, Shield, Coins, Crown, CheckCircle } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import Script from "next/script";
 
 declare global {
   interface Window {
@@ -13,6 +14,12 @@ declare global {
 
 export default function PricingPage() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  const showSuccess = (message: string) => {
+    setSuccessToast(message);
+    setTimeout(() => setSuccessToast(null), 5000);
+  };
 
   const packs = [
     { id: "pack_50", name: "50 TOKENS", tokens: 50, price: 49, icon: <Coins className="w-6 h-6" /> },
@@ -35,16 +42,16 @@ export default function PricingPage() {
     "Early Access to New Features",
   ];
 
-  const handleCheckout = async (itemId: string, amountInr: number) => {
-    setLoadingId(itemId);
+  const handleCheckout = async (planId: string, amountInr: number) => {
+    setLoadingId(planId);
     try {
-      // 1. Create Order on Backend
+      // 1. Create Order on Backend (saves transaction to DB)
       const res = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amountInr * 100, receipt: itemId }),
+        body: JSON.stringify({ amount: amountInr * 100, receipt: planId, planId }),
       });
-      
+
       const order = await res.json();
       if (!res.ok) throw new Error(order.error || "Failed to create order");
 
@@ -54,10 +61,10 @@ export default function PricingPage() {
         amount: order.amount,
         currency: order.currency,
         name: "Rizzly AI",
-        description: `Purchase ${itemId}`,
+        description: `Purchase ${planId}`,
         order_id: order.id,
         handler: async function (response: any) {
-          // 3. Verify Signature
+          // 3. Verify Signature & fulfil tokens on server
           const verifyRes = await fetch("/api/verify-payment", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -65,8 +72,12 @@ export default function PricingPage() {
           });
           const verifyData = await verifyRes.json();
           if (verifyRes.ok) {
-            alert("Payment successful! Tokens added.");
-            // Refresh token balance logic here
+            const tokensAdded = verifyData.tokensAdded ?? 0;
+            showSuccess(
+              tokensAdded > 0
+                ? `Payment successful! ${tokensAdded} tokens added to your account.`
+                : "Payment successful! Your plan has been activated."
+            );
           } else {
             alert("Payment verification failed: " + verifyData.error);
           }
@@ -79,7 +90,6 @@ export default function PricingPage() {
         alert(`Payment Failed: ${response.error.description}`);
       });
       rzp.open();
-
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -89,8 +99,27 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-mono pb-20">
-      <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
-      
+      {/* Load Razorpay SDK properly via next/script */}
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="lazyOnload"
+      />
+
+      {/* Success Toast */}
+      <AnimatePresence>
+        {successToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -60 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 bg-black text-white px-6 py-4 brutal-border brutal-shadow font-bold uppercase text-sm max-w-sm w-[90%] text-center"
+          >
+            <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
+            <span>{successToast}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <header className="p-4 flex items-center justify-between border-b-4 border-black bg-white sticky top-0 z-50">
         <Link href="/dashboard" className="flex items-center gap-2 font-bold hover:bg-black hover:text-white px-2 py-1 transition-colors uppercase">
           <ArrowLeft className="w-5 h-5" />
@@ -107,7 +136,7 @@ export default function PricingPage() {
         </div>
 
         {/* Ultra Pro Hero Card */}
-        <motion.div 
+        <motion.div
           whileHover={{ y: -5 }}
           className="brutal-border brutal-shadow bg-black text-white mb-16 relative overflow-hidden"
         >
@@ -153,10 +182,10 @@ export default function PricingPage() {
         </h2>
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           {subscriptions.map((sub) => (
-            <motion.div 
+            <motion.div
               key={sub.id}
               whileHover={{ y: -5 }}
-              className={`brutal-border brutal-shadow bg-white flex flex-col relative ${sub.popular ? 'ring-4 ring-secondary' : ''}`}
+              className={`brutal-border brutal-shadow bg-white flex flex-col relative ${sub.popular ? "ring-4 ring-secondary" : ""}`}
             >
               {sub.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-secondary text-white font-bold px-4 py-1 brutal-border text-sm uppercase">
@@ -172,7 +201,7 @@ export default function PricingPage() {
                   <div className="text-4xl font-bold mb-2">₹{sub.price}</div>
                   <div className="font-bold uppercase text-gray-600">{sub.tokens}</div>
                 </div>
-                <button 
+                <button
                   onClick={() => handleCheckout(sub.id, sub.price)}
                   disabled={loadingId === sub.id}
                   className="w-full bg-primary text-black font-bold border-4 border-black py-3 brutal-shadow-sm hover:translate-y-1 transition-transform uppercase disabled:opacity-50"
@@ -189,10 +218,10 @@ export default function PricingPage() {
         </h2>
         <div className="grid md:grid-cols-3 gap-8">
           {packs.map((pack) => (
-            <motion.div 
+            <motion.div
               key={pack.id}
               whileHover={{ y: -5 }}
-              className={`brutal-border brutal-shadow bg-white flex flex-col relative ${pack.popular ? 'ring-4 ring-primary' : ''}`}
+              className={`brutal-border brutal-shadow bg-white flex flex-col relative ${pack.popular ? "ring-4 ring-primary" : ""}`}
             >
               {pack.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-black font-bold px-4 py-1 brutal-border text-sm uppercase">
@@ -205,7 +234,7 @@ export default function PricingPage() {
               </div>
               <div className="p-6 bg-white flex flex-col items-center">
                 <div className="text-3xl font-pixel mb-6">₹{pack.price}</div>
-                <button 
+                <button
                   onClick={() => handleCheckout(pack.id, pack.price)}
                   disabled={loadingId === pack.id}
                   className="w-full bg-black text-white font-bold border-4 border-black py-3 brutal-shadow-sm hover:bg-gray-800 transition-colors uppercase disabled:opacity-50"

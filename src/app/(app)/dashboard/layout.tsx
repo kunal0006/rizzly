@@ -1,6 +1,7 @@
 "use client";
 
-import { Home, History, PlusSquare, LogOut, ShoppingCart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Home, History, PlusSquare, LogOut, ShoppingCart, Coins } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +12,16 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/users/balance")
+      .then((r) => r.json())
+      .then(({ tokenBalance }) => {
+        if (typeof tokenBalance === "number") setTokenBalance(tokenBalance);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -44,7 +55,17 @@ export default function DashboardLayout({
             <ShoppingCart className="w-6 h-6" /> Item Shop
           </Link>
         </nav>
-        <div className="mt-auto">
+        <div className="mt-auto space-y-3">
+          {/* Token Balance Display */}
+          <Link href="/pricing" className="flex items-center justify-between p-3 brutal-border bg-primary brutal-shadow-sm hover:-translate-y-1 transition-transform">
+            <div className="flex items-center gap-2 font-bold uppercase text-sm">
+              <Coins className="w-5 h-5" />
+              <span>Tokens</span>
+            </div>
+            <span className="font-pixel text-base">
+              {tokenBalance === null ? "..." : tokenBalance}
+            </span>
+          </Link>
           <button 
             onClick={handleLogout}
             className="w-full p-4 brutal-border bg-white font-bold brutal-shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-3 uppercase"

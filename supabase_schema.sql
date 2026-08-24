@@ -78,6 +78,15 @@ begin
 end;
 $$ language plpgsql security definer;
 
+-- FUNCTION: Secure Token Addition (used for payment fulfillment)
+-- Run this in the Supabase SQL Editor if not already present.
+create or replace function add_tokens(p_user_id uuid, p_amount integer)
+returns void as $$
+begin
+  update public.users set token_balance = token_balance + p_amount where id = p_user_id;
+end;
+$$ language plpgsql security definer;
+
 -- ==========================================
 -- V2 EVOLUTION: AI Dating Intelligence Platform
 -- ==========================================
