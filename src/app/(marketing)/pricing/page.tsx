@@ -42,14 +42,14 @@ export default function PricingPage() {
     "Early Access to New Features",
   ];
 
-  const handleCheckout = async (planId: string, amountInr: number) => {
+  const handleCheckout = async (planId: string) => {
     setLoadingId(planId);
     try {
-      // 1. Create Order on Backend (saves transaction to DB)
+      // 1. Create Order on Backend — price & tokens derived server-side from planId
       const res = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: amountInr * 100, receipt: planId, planId }),
+        body: JSON.stringify({ planId }),
       });
 
       const order = await res.json();
@@ -167,7 +167,7 @@ export default function PricingPage() {
                 <div className="font-bold text-gray-400 uppercase">/month</div>
               </div>
               <button
-                onClick={() => handleCheckout("sub_ultra_pro", 1999)}
+                onClick={() => handleCheckout("sub_ultra_pro")}
                 disabled={loadingId === "sub_ultra_pro"}
                 className="w-full bg-accent text-black font-bold border-4 border-accent py-4 brutal-shadow-sm hover:translate-y-1 transition-transform uppercase text-lg font-pixel disabled:opacity-50"
               >
@@ -202,7 +202,7 @@ export default function PricingPage() {
                   <div className="font-bold uppercase text-gray-600">{sub.tokens}</div>
                 </div>
                 <button
-                  onClick={() => handleCheckout(sub.id, sub.price)}
+                  onClick={() => handleCheckout(sub.id)}
                   disabled={loadingId === sub.id}
                   className="w-full bg-primary text-black font-bold border-4 border-black py-3 brutal-shadow-sm hover:translate-y-1 transition-transform uppercase disabled:opacity-50"
                 >
@@ -235,7 +235,7 @@ export default function PricingPage() {
               <div className="p-6 bg-white flex flex-col items-center">
                 <div className="text-3xl font-pixel mb-6">₹{pack.price}</div>
                 <button
-                  onClick={() => handleCheckout(pack.id, pack.price)}
+                  onClick={() => handleCheckout(pack.id)}
                   disabled={loadingId === pack.id}
                   className="w-full bg-black text-white font-bold border-4 border-black py-3 brutal-shadow-sm hover:bg-gray-800 transition-colors uppercase disabled:opacity-50"
                 >
